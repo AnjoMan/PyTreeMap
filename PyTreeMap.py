@@ -1,85 +1,122 @@
-import Tkinter as Tk
-import os
-import random
 import scipy.io
 import numpy as np
-
-fileName = os.path.join("C:\\","Users","Anton", "Development","Visualization","PyTreeMap", "avgRectangles.txt");
-
-
+import Tkinter as Tk
+from mlabwrap import mlab
 
 
-def drawTreeMap(myCanvas, pos, rectangles, sliver=0, colorSeed="#7F7F7F"):
-
-    clamp = lambda x, low, high: min(high, max(low, x))
-    colorBase= [clamp(int(x,16), 76, 255-76) for x in [colorSeed[1:3], colorSeed[3:5], colorSeed[5:]]]
+class Treemap:
+    children = []
     
-#         box = box[ [1,0,3,2] ]
+    def __init__(self, value=1):
+        self.value = value
     
-    r = lambda: random.randint(0,75)
-    
-    x0,y0,xn,yn = pos
-    
-    width, height = xn-x0, yn-y0
-    
-    
-    outerCorners = np.transpose(np.vstack( ( rectangles[:,0] + rectangles[:,2], rectangles[:,1]+ rectangles[:,3]) ))
-    rectangles[:,0] = rectangles[:,0] / outerCorners[:,0].max()
-    rectangles[:,2] = rectangles[:,2] / outerCorners[:,0].max()
-    rectangles[:,1] = rectangles[:,1] / outerCorners[:,1].max()
-    rectangles[:,3] = rectangles[:,3] / outerCorners[:,1].max()
-    
-    for box in rectangles:
-        x1,y1 = x0 + box[0] * width + sliver, y0 + box[1]*height + sliver
-        x2,y2 = x1 + width * box[2] - 2* sliver, y1 + height * box[3]  - 2* sliver
-        x1,y1 = clamp(x1, x0+sliver, xn-sliver), clamp(y1, y0+sliver,yn-sliver)
-        x2,y2 = clamp(x2, x0+sliver, xn-sliver), clamp(y2, y0+sliver,yn-sliver)
+    def hasChildren(self):
+        return self.children==True
         
-        color = ('#%02X%02X%02X' % (r()+colorBase[0],r()+colorBase[1],r()+colorBase[2]))
-        myCanvas.create_rectangle(x1,y1,x2,y2, fill=color, width=0)
-
-
-
-#end drawTreeMap
-
-
-layouts = scipy.io.loadmat('treemapLayouts.mat')["treemapLayouts"][0]
-
-masterLayout = layouts[0];
-sublayouts = layouts[1:];
-
-
-xWide, xHigh = 800, 800
-space = 10;
-sliver = 0;
-
+    def setChildren(self,values=np.random.rand(20)):
+        self.children = [Treemap(value) for value in values]
     
-corners = lambda points: [space + points[0]*(xWide-2*space)+sliver, space + points[1]*(xHigh-2*space)+sliver, space + (points[0]+points[2])*(xWide-2*space)-2*sliver, space +(points[1]+points[3])*(xHigh-2*space)-2*sliver]
+    def drawTreeMap(self, myCanvas,pos,sliver):
+        
+        if self.hasChildren():
+            #draw sub
+    
+    @staticmethod
+    def defineCanvasObject(width,height,border, name="Treemap"):
+         master = Tk.Tk(); 
+        master.title("Fault TreeMap")
+        myCanvas = Tk.Canvas(master, width=canvasX, height=canvasY)
+        myCanvas.pack()
+        return myCanvas
+    
+    
+    def draw(self,canvasX=810, canvasY=810, space=10):
+        #get a canvas object for drawing
+        myCanvas = defineCanvasObject(canvasX,canvasY,space)
+       
+        #define rectangle in which to draw treemap
+        pos = [space,space, canvasX-space, canvasX-space]
+        
+        drawTreeMap(myCanvas,pos)
+        
+        # start drawing the treemap. should be called only by top of drawing
+        #layout
+        values = [treemap.value for treemap in self.children]
+        rectangles = mlab.treemap(values)
+        
+        x1,y1,w,h = rectangles
+    
+        x1 = space + x1 * canvasX
+        y1 = space + y1 * canvasY
+        xn = x1 + w*canvasX
+        yn = y1 + h*canvasY
+        
+        rectangles = zip(x1,y1,xn,yn)
+        
+        r = lambda: np.random.randint(0,255)
+        rC = lambda: '#%02X%02X%02X' % (r(),r(),r())
+        
+        
+        
+        
+        for rectangle in rectangles:
+            x1,y1,xn,yn = rectangle
+            print x1,y1,xn,yn
+            myCanvas.create_rectangle(x1,y1,xn,yn, fill=rC(), width=0)
+        
 
-r = lambda: random.randint(76, 255-76)
-color = lambda: ('#%02X%02X%02X' % (r(),r(),r()))
+        
+        
+#         self.drawTreeMap(myCanvas, [space,space,canvasX-space, canvasY-space], rectangles)
+        
+        
+        Tk.mainloop()
+        
+    
+    
+    
+def flatten(l, ltypes=(list, tuple)):
+    ltype = type(l)
+    l = list(l)
+    i = 0
+    while i < len(l):
+        while isinstance(l[i], ltypes):
+            if not l[i]:
+                l.pop(i)
+                i -= 1
+                break
+            else:
+                l[i:i + 1] = l[i]
+        i += 1
+    return ltype(l)
+    
 
 
-master = Tk.Tk();
-myCanvas = Tk.Canvas(master, width=xWide+2*space, height=xHigh+2*space)
-myCanvas.pack()
-
-for index,box in enumerate(masterLayout):
-    drawTreeMap(myCanvas, corners(box), sublayouts[index], colorSeed=color(), sliver=0)
-
-# n = 9;
-# index,box = n, masterLayout[n]
-# drawTreeMap(myCanvas, corners(box), sublayouts[index], colorSeed=color(), sliver=0)
-Tk.mainloop()
-
-
-
-# drawTreeMap(myCanvas, corners([0,0,1,1]), masterLayout)
-
-
-
-# print rectangle
 
 
 
 
+cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
+
+print [key for key in cpfResults.keys()]
+
+CPFloads = cpfResults['CPFloads'][0];
+CPFbranches = cpfResults['branchFaults'][0]
+base = cpfResults['base'][0,0]
+
+
+nBranches, rows = base.branch.shape
+CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
+branchElements = set(flatten(CPFbranches))
+
+branchResultIndexes = dict();
+
+
+myTreemap = Treemap();
+myTreemap.setChildren();
+
+myTreemap.draw()
+# 
+# for index, faultElements in enumerate(CPFbranches):
+#     branchResultIndexes[tuple(faultElements)] = index
+    

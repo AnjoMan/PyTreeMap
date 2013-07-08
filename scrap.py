@@ -1,18 +1,11 @@
 import scipy.io
+import numpy as np
+from mlabwrap import mlab
 
 
-# 
-# file = scipy.io.loadmat('treemapLayouts.mat');
-# 
-# 
-# 
-# layouts = file["treemapLayouts"][0]
 
-layouts = scipy.io.loadmat('treemapLayouts.mat')["treemapLayouts"][0]
+myArray = np.random.rand(20);
 
 
-myLayout = layouts[0]
-
-
-for index, line in enumerate(myLayout):
-    print line
+r = mlab.treemap(myArray,20,20, nout=1).transpose()
+print r
