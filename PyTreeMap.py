@@ -49,7 +49,7 @@ class Treemap:
         def rgb(h,s,v):
             r,g,b = colorsys.hsv_to_rgb(h,s,v)
             
-            print r,g,b
+#             print r,g,b
             
             return '#%02X%02X%02X' % tuple( [ int(np.round(el*255)) for el in (r,g,b)])
         
@@ -83,10 +83,10 @@ class Treemap:
 #             return seed
             return rgb(h,s,v)
     
-    def drawOutline(self,myCanvas, pos):
+    def drawOutline(self,myCanvas, pos, borderColor="#000000"):
         x1,y1,xn,yn = pos
         borderWidth= max(0,2-self.level);
-        myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth)
+        myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth, outline = borderColor)
         
     def drawTreeMap(self, myCanvas,pos,sliver=0, colorSeed=None):
         
@@ -113,12 +113,13 @@ class Treemap:
 #                 print rectangles[index]
                 child.drawTreeMap(myCanvas, rectangles[index], colorSeed=color)
             
+            #draw outlines
             for index,rectangle in enumerate(rectangles):
-                self.drawOutline(myCanvas, rectangles[index])
+                borderColor = "#%02X%02X%02X" % tuple([int( (self.level) * 255 *2/10)]*3)
+                self.drawOutline(myCanvas, rectangles[index], borderColor=borderColor)
             
             
         else:
-#             print pos
             Treemap.canvas_drawRectangle(myCanvas, pos, sliver=sliver, color=color)
             
     
@@ -158,14 +159,23 @@ def flatten(l, ltypes=(list, tuple)):
     
 
 
+def main():
 
-
-
+    myTreemap = Treemap();
+    myTreemap.setChildren();
+    
+    for child in myTreemap.children:
+        child.setChildren(values=np.random.rand(5))
+    
+    myTreemap.draw()
+   
+    
+print __name__
 
 cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
 
-print [key for key in cpfResults.keys()]
-
+#     print [key for key in cpfResults.keys()]
+    
 CPFloads = cpfResults['CPFloads'][0];
 CPFbranches = cpfResults['branchFaults'][0]
 base = cpfResults['base'][0,0]
@@ -188,4 +198,8 @@ myTreemap.draw()
 # 
 # for index, faultElements in enumerate(CPFbranches):
 #     branchResultIndexes[tuple(faultElements)] = index
-    
+
+
+if __name__ == "__main__":
+    main()
+
