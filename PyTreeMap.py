@@ -7,19 +7,36 @@ from collections import defaultdict
 
 
 class Treemap:
-    children = []
     
     def __init__(self, value=1, level=0):
         self.value = value
         self.level = level
+        self.children = []
     
-    
+    def __str__(self):
+        string = " | "*self.level + "Treemap node, value = " + ("%8.2f" % self.value) + ", level: " + str(self.level) + "; " + ( ("%d sub-nodes" % len(self.children)) if len(self.children)>0 else "")
+        
+        for child in self.children:
+            string += "\n" + child.__str__()
+        
+        return string
     
     def hasChildren(self):
         return len(self.children) > 0
         
     def setChildren(self,values=np.random.rand(20)):
         self.children = [Treemap(value, level=self.level+1) for value in values]
+    
+    def addChild(self, value=np.random.rand()):
+        self.children += [Treemap(value, level = self.level+1)]
+        return self.children[-1]
+    
+    def append(self, child=None):
+        if child == None:
+            child=Treemap(value=np.random.rand(), level = self.level+1)
+        
+        self.children += [child]
+        return self.children[-1]
     
     @staticmethod
     def canvas_drawRectangle(myCanvas, pos, sliver=0, color="#FF0000"):
@@ -142,35 +159,51 @@ def flatten(l, ltypes=(list, tuple)):
     return ltype(l)
     
 
-def buildTreemap(CPF_reductions, CPFbranches,parent=None):
+def clean_faultList(key, faultList):
+    #remove key from each cases element list (unless len == 1, which is assumed to be the fault involving that key alone
+    return [[el for el in fault if el != key] if len(fault)>1 else fault for fault in faultList]
+
+
+def buildTreemap(CPF_reductions, CPFbranches,parent=None, level=0):
     
-    value = np.sum(CPF_reductions)
     
     if parent==None:
-        parent = Treemap(value)
+        parent = Treemap(value = np.sum(CPF_reductions))
     
-    #get list of different branch elements in the fault list
-    branchElements = set(flatten(CPFbranches))  
+    thisLevel = parent.level+1
     
-    #get lists of indices where each branch participates
-    branchResultIndexes = defaultdict(list);
-
-    for index,fault in enumerate(CPFbranches):
-        for element in fault:
-            branchResultIndexes[element] += [index]
-    
+    if thisLevel > 4: return []
+    else:
+        #get list of different branch elements in the fault list
+        branchElements = set(flatten(CPFbranches))
         
-    subCPFbranches = {key: [CPFbranches[index] for index in value] for key,value in branchResultIndexes.items()}
-    subCPF_reductions = { key: [CPF_reductions[index] for index in value] for key,value in branchResultIndexes.items()}
-    subAreas = {key: np.sum(value) for key,value in subCPF_reductions.items()}
+        branchResultIndexes = defaultdict(list);
+        
+        for index,fault in enumerate(CPFbranches):
+            for element in fault:
+                branchResultIndexes[element] += [index]
+        
+        value = np.sum(CPF_reductions)
+        
+        subCPFbranches = {key: [CPFbranches[index] for index in value] for key,value in branchResultIndexes.items()}
+        subCPF_reductions = { key: [CPF_reductions[index] for index in value] for key,value in branchResultIndexes.items()}
+        subAreas = {key: np.sum(value) for key,value in subCPF_reductions.items()}
+        
+        
+        cleanCPFbranches = {key: clean_faultList(key, faultList) for key, faultList in subCPFbranches.items()}
+        
+#         key = 1;
+        
+        for key in subCPF_reductions.keys():
+            child = parent.addChild(value=subAreas[key])
+            if len(cleanCPFbranches[key]) >1:
+                buildTreemap(subCPF_reductions[key],cleanCPFbranches[key],parent = child)
+        
+        return parent
+        
+        
     
-    parent.setChildren(subAreas.values())
-    return parent
-
-def clean_faultList(key, faultList):
-        return [[el for el in fault if el != key] if len(fault)>1 else fault for fault in faultList]
-
-
+    
 def main():
     #sample usage generator
     myTreemap = Treemap();
@@ -225,11 +258,15 @@ cleanCPFbranches = dict()
 
 for key,faultList in subCPFbranches.items():
     cleanCPFbranches[key] = clean_faultList(key, faultList)
+#     
+# CPFbranches = cleanCPFbranches[1]
+# CPFreductions = subCPF_reductions[1]
 #from loads and accompanying branches, generate a treemap
-# myTreemap = buildTreemap(CPF_reductions, CPFbranches)
+myTreemap = buildTreemap(CPF_reductions, CPFbranches)
+print myTreemap
 # myTreemap = Treemap(value)
 # myTreemap.setChildren(subAreas.values())
-# myTreemap.draw()
+myTreemap.draw()
 #     
 # if __name__ == "__main__":
 #     main()
