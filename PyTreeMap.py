@@ -4,19 +4,25 @@ import Tkinter as Tk
 from mlabwrap import mlab
 import colorsys
 from collections import defaultdict
-from TransmissionLine import Line
+from PowerNetwork import Line
+
 
 class Treemap:
     
     compareSecondary = None;
     
-    def __init__(self, value=1, level=0, parent=None, secondary = None):
-        self.value = value
-        self.level = level
-        self.parent=parent
-        self.children = []
-        self.secondary = secondary
+    def __init__(self, value=1, parent=None, secondary = None):
+        self.value, self.parent,  self.secondary,self.children, = value, parent, secondary, []
+
+        try: self.level = parent + 1
+        except: self.level = 0 #error if parent does not implement __add__()
     
+    def __add__(self, other): #use this to get the level of a Treemap and increment it
+        return self.level + other;
+    
+    def __radd__(self,other):
+        self.__add__(other)
+        
     def __str__(self):
         string = " | "*self.level + "Treemap node, value = " + ("%8.2f" % self.value)
         string += ", subvalue = " + str(self.secondary) if self.secondary != None else ""
@@ -35,7 +41,7 @@ class Treemap:
         self.children = [Treemap(value, level=self.level+1) for value in values]
     
     def addChild(self, value=np.random.rand(), secondary=None):
-        self.children += [Treemap(value, level = self.level+1, parent=self, secondary=secondary)]
+        self.children += [Treemap(value, parent=self, secondary=secondary)]
         return self.children[-1]
     
     def append(self, child=None):
@@ -63,10 +69,12 @@ class Treemap:
         myCanvas.pack()
         return myCanvas
     
-
     
-    def randomColor(self, h=None, s=0.3, v=0.7, seed='#998899', secondary_weight = 1):
-        def clamp(val): return max( min( (val, 1) ),0)
+    
+    def randomColor(self, h=None, s=0.3, v=0.7, seed='#998899', secondary_weight = None):
+        def clamp(*vals): 
+            lst = [max( min( (val, 1) ),0) for val in vals]
+            return lst if len(lst) > 1 else lst[0]
         
         #how to convert from decimal h,s,v to "#RRggBB" string
         def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(np.round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
@@ -90,16 +98,17 @@ class Treemap:
         elif self.level > 1:
             h,s,v = hsv(seed)
             h = h + ( np.random.rand() - 0.5 ) *2/10
-            s = s + ( np.random.rand() - 0.5) * 2/10
-#             v = v + (np.random.rand() - 0.5)*1/10
-            v = secondary_weight
-            h,s,v = clamp(h),clamp(s), clamp(v)
+            s = (secondary_weight)*0.7+0.15 if secondary_weight != None else s + (np.random.rand()-0.5)*2/10
+            v = (1-secondary_weight)*0.4+0.3 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10
+            h,s,v = clamp(h,s,v)
             
             return rgb(h,s,v)
     
     def drawOutline(self,myCanvas, pos, borderColor="#000000"):
         x1,y1,xn,yn = pos
         borderWidth= max(0,2-self.level);
+        
+        #toolbox-specific code to draw outline
         myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth, outline = borderColor)
         
     def drawTreeMap(self, myCanvas,pos,sliver=0, secondary_weight=None, colorSeed=None):
@@ -189,7 +198,7 @@ def compare(parentValue, childValue):
     x2,y2 = childValue
     return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
 
-def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = None, level=0):
+def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = None):
     """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
     
     def clean_faultList(key, faultList):
@@ -199,10 +208,8 @@ def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = Non
     if parent==None: #top of the tree -> build parent node
         parent = Treemap(value = np.sum(CPF_reductions), secondary = (1,1))
     
-    thisLevel = parent.level+1
-    
    
-    if thisLevel > 20: return []
+    if parent.level > 20: return [] #depth limit
     else:
         #get list of different branch elements in the fault list
         branchElements = set(flatten(CPFbranches))
@@ -224,14 +231,108 @@ def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = Non
         
         for key in subCPF_reductions.keys():
             child = parent.addChild(value=subAreas[key], secondary=secondary_values[key])
-            if len(cleanCPFbranches[key]) >1:
+            
+            if len(cleanCPFbranches[key]) >1:#stop building tree when you reach single elements.
                 buildTreemap(subCPF_reductions[key],cleanCPFbranches[key],secondary_values = secondary_values,parent = child)
         
         return parent
-        
-        
+
+def myBuildTreemap(faultList, parent=None, secondary_values=None):
+    """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
     
+    if parent == None:
+        parent = Treemap(value = np.sum( fault.value() for fault in faultList))
     
+    if parent.level > 20:
+        return [] #depth limit
+    else:
+        #get list of unique elements in faultList
+        elements = set(flatten([ fault.getElements() for fault in faultList]))
+        
+        #get sum values for all faults in tree
+        value = np.sum( [fault.value() for fault in faultList])
+        
+        #for each element, make a list of faults it is involved in
+        subFaults = defaultdict(list)
+        
+        for fault in faultList:
+            #for each element, copy the fault, strip the element, and add it to element's list.
+            for element in fault.getElements():
+                subFaults[element] = fault.subFault(element)
+        
+        for faultList in subFaults:
+            child = parent.addChild(value = sum([fault.value() for fault in faultList]), secondary = 1);
+            
+            if len(faultList) > 1:
+                buildTreemap(faultList, parent=child)
+
+
+class Element():
+    
+    def __init__(self, type=None, id=0, value=None):
+        self.type=type
+        self.id=id
+        if value==None:
+            self.value = np.random.rand()
+    
+    def __str__(self):
+        return self.type + " %04d" % self.id
+    
+    def __repr__(self):
+        return str(self)
+    
+    def __eq__(self, other):
+        return True if self.type == other.type and self.id == other.id else false
+    
+    def __hash__(self):
+        #has the string representation of the element, eg 'bus 01'
+        return hash(str(self))
+
+class Fault:
+
+
+    
+    def __init__(self,listing, reduction = None):
+        listing = listing[0][0]
+        self.label = str(listing.label[0])
+        self.reduction = reduction
+        
+        def getList(myList):
+            zeroDim = [element for element in myList.shape if element != 0L]
+            return [element for element in listing.branch[0]] if len(zeroDim) > 1 else []
+        
+        self.branch = [Element(type='branch',id=item) for item in getList(listing.branch)]
+        self.bus = [Element(type='bus', id=item) for item in getList(listing.bus)]
+        self.gen = [Element(type='gen', id=item) for item in getList(listing.gen)]
+    
+    def __repr__(self):
+        return str(self);
+    def __str__(self):
+        branch = [el.id for el in self.branch]
+        bus = [el.id for el in self.bus]
+        gen = [el.id for el in self.gen]
+        string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
+        string = '\n%s' % string
+#         string = '%30s\t%20s\t%20s\t%20s' % self.label, str(self.branch), str(self.bus), str(self.gen)
+        return string
+    
+    def value(self):
+        return self.reduction
+    
+    def getElements(self):
+        return self.branch + self.bus + self.gen
+    
+    def strip(self, stripElement):
+        def removeElement(mList, mElement): return [el for el in mList if el != mElement]
+        self.branch, self.bus, self.gen = [ removeElement(mList, stripElement) for mList in [self.branch, self.bus, self.gen]]
+    
+    def subFault(self, element):
+        from copy import copy
+        newFault = copy(self)
+        newFault.strip(element)
+        return newFault
+
+
 def main():
     #sample usage generator
     myTreemap = Treemap();
@@ -254,6 +355,9 @@ print __name__
 
 cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
 
+# cpfResults = scipy.io.loadmat('cpfResults')
+
+
 print [key for key in cpfResults.keys()]
     
 baseLoad = cpfResults['baseLoad'][0,0]
@@ -264,19 +368,29 @@ CPF_reductions = baseLoad- cpfResults['CPFloads'][0];
 CPFbranches = cpfResults['branchFaults'][0]
 base = cpfResults['base'][0,0]
 
+faults = [ Fault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions)]
 
-nBranches, rows = base.branch.shape
-CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
+elements = set(flatten([fault.getElements() for fault in faults]))
 
-branch_geo = {id: line_geo for id,line_geo in zip( range(1, nBranches+1), base.branch_geo[0]) }
-branch_positions = {key: Line(line_geo).getPosition() for key, line_geo in branch_geo.items()}
+subFaults = defaultdict(list)
 
-myTreemap = buildTreemap(CPF_reductions, CPFbranches, secondary_values = branch_positions)
+for fault in faults:
+    #for each element, copy the fault, strip the element, and add it to element's list.
+    for element in fault.getElements():
+        subFaults[element] += [fault.subFault(element)]
+
+# nBranches, rows = base.branch.shape
+# CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
+# 
+# branch_geo = {id: line_geo for id,line_geo in zip( range(1, nBranches+1), base.branch_geo[0]) }
+# branch_positions = {key: Line(line_geo).getPosition() for key, line_geo in branch_geo.items()}
+
+# myTreemap = buildTreemap(CPF_reductions, CPFbranches, secondary_values = branch_positions)
 
 # print myTreemap
 
-Treemap.compare = compare
-myTreemap.draw()
+# Treemap.compare = compare
+# myTreemap.draw()
 #     
 # if __name__ == "__main__":
 #     main()

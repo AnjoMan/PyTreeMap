@@ -1,31 +1,14 @@
 import scipy.io
 import numpy as np
+import numbers
+import copy
 
-
-class mCircle:
-    perimeter = None
-    def __init__(self, radius=np.random.rand):
-        if radius == np.random.rand:
-            radius = radius()
-            
-        self.radius = radius
-    
-    def __str__(self):
-        return str(self.radius)
-    
-    def getPerimeter(self):
-        return perimeter(self.radius)
+faultList = [1,2,3];
 
 
 
-myCircles = [mCircle() for i in range(1,200)]
-
-def perimeter(radius):
-    return 100*np.pi*radius
-mCircle.perimeter =  perimeter
+for faultList in [ [1,2,3], [4,5,6], [7,8,9]]:
+    print faultList
 
 
-
-
-for circle in myCircles:
-    print "radius: %01.3f. perimeter: %2.3f\n" % (circle.radius,circle.getPerimeter())
+print faultList
