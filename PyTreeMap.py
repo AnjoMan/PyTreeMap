@@ -194,9 +194,10 @@ def flatten(l, ltypes=(list, tuple)):
 
 
 def compare(parentValue, childValue):
-    x1,y1 = parentValue
-    x2,y2 = childValue
-    return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
+#     x1,y1 = parentValue
+#     x2,y2 = childValue
+#     return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
+    return np.random.rand()
 
 def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = None):
     """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
@@ -240,6 +241,7 @@ def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = Non
 def myBuildTreemap(faultList, parent=None, secondary_values=None):
     """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
     
+    
     if parent == None:
         parent = Treemap(value = np.sum( fault.value() for fault in faultList))
     
@@ -258,13 +260,17 @@ def myBuildTreemap(faultList, parent=None, secondary_values=None):
         for fault in faultList:
             #for each element, copy the fault, strip the element, and add it to element's list.
             for element in fault.getElements():
-                subFaults[element] = fault.subFault(element)
+                subFaults[element] += [fault.subFault(element)]
         
-        for faultList in subFaults:
-            child = parent.addChild(value = sum([fault.value() for fault in faultList]), secondary = 1);
+        
+        
+        for faultList in subFaults.values():
+            child = parent.addChild(value = sum(fault.value() for fault in faultList), secondary = np.random.rand());
             
             if len(faultList) > 1:
-                buildTreemap(faultList, parent=child)
+                myBuildTreemap(faultList, parent=child)
+    
+    return parent
 
 
 class Element():
@@ -370,15 +376,9 @@ base = cpfResults['base'][0,0]
 
 faults = [ Fault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions)]
 
-elements = set(flatten([fault.getElements() for fault in faults]))
-
-subFaults = defaultdict(list)
-
-for fault in faults:
-    #for each element, copy the fault, strip the element, and add it to element's list.
-    for element in fault.getElements():
-        subFaults[element] += [fault.subFault(element)]
-
+    
+myTreemap = myBuildTreemap(faults, secondary_values = np.random.rand(len(faults)));
+myTreemap.draw()
 # nBranches, rows = base.branch.shape
 # CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
 # 
