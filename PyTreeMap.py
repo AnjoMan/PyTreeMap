@@ -274,29 +274,37 @@ def myBuildTreemap(faultList, parent=None, secondary_values=None):
 
 
 class Element():
-    
-    def __init__(self, type=None, id=0, value=None):
-        self.type=type
+    Bus = 'Bus'
+    Branch = 'Branch'
+    Gen = 'Gen'
+    def __init__(self, id=0, value=None):
         self.id=id
-        if value==None:
-            self.value = np.random.rand()
+        self.value = value if value != None else np.random.rand()
     
-    def __str__(self):
-        return self.type + " %04d" % self.id
     
     def __repr__(self):
-        return str(self)
+        return self.type() + " %04d" % self.id
     
     def __eq__(self, other):
-        return True if self.type == other.type and self.id == other.id else false
+        return True if self.type() == other.type() and self.id == other.id else False
     
     def __hash__(self):
         #has the string representation of the element, eg 'bus 01'
         return hash(str(self))
+    
+    def type(self):
+        return 'Element'
 
+class Branch(Element):
+    def type(self): return 'Branch'
+
+class Bus(Element):
+    def type(self): return 'Bus'
+
+class Gen(Element):
+    def type(self): return 'Gen'
+    
 class Fault:
-
-
     
     def __init__(self,listing, reduction = None):
         listing = listing[0][0]
@@ -307,30 +315,29 @@ class Fault:
             zeroDim = [element for element in myList.shape if element != 0L]
             return [element for element in listing.branch[0]] if len(zeroDim) > 1 else []
         
-        self.branch = [Element(type='branch',id=item) for item in getList(listing.branch)]
-        self.bus = [Element(type='bus', id=item) for item in getList(listing.bus)]
-        self.gen = [Element(type='gen', id=item) for item in getList(listing.gen)]
+        self.elements = []
+        self.elements += [Branch(id=item) for item in getList(listing.branch)]
+        self.elements += [Bus(id=item) for item in getList(listing.bus)]
+        self.elements += [Gen(id=item) for item in getList(listing.gen)]
     
-    def __repr__(self):
-        return str(self);
     def __str__(self):
-        branch = [el.id for el in self.branch]
-        bus = [el.id for el in self.bus]
-        gen = [el.id for el in self.gen]
+        return repr(self);
+    def __repr__(self):
+        def typeIds(mType): return [el.id for el in self.elements if el.type() == mType]
+        branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
         string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
         string = '\n%s' % string
-#         string = '%30s\t%20s\t%20s\t%20s' % self.label, str(self.branch), str(self.bus), str(self.gen)
+        
         return string
     
     def value(self):
         return self.reduction
     
     def getElements(self):
-        return self.branch + self.bus + self.gen
+        return self.elements
     
     def strip(self, stripElement):
-        def removeElement(mList, mElement): return [el for el in mList if el != mElement]
-        self.branch, self.bus, self.gen = [ removeElement(mList, stripElement) for mList in [self.branch, self.bus, self.gen]]
+        self.elements = [el for el in self.elements if el != stripElement]
     
     def subFault(self, element):
         from copy import copy
@@ -379,6 +386,8 @@ faults = [ Fault(listing, reduction) for listing, reduction in zip(CPFbranches, 
     
 myTreemap = myBuildTreemap(faults, secondary_values = np.random.rand(len(faults)));
 myTreemap.draw()
+
+
 # nBranches, rows = base.branch.shape
 # CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
 # 
