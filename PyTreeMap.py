@@ -4,16 +4,23 @@ import Tkinter as Tk
 from mlabwrap import mlab
 import colorsys
 from collections import defaultdict
-from PowerNetwork import Line
+from PowerNetwork import *
 
 
 class Treemap:
     
-    compareSecondary = None;
+    @staticmethod
+    def compare(self, other):
+        return np.random.rand()
     
-    def __init__(self, value=1, parent=None, secondary = None):
+    def __init__(self, value=1,element=None, parent=None, secondary = None):
         self.value, self.parent,  self.secondary,self.children, = value, parent, secondary, []
-
+        self.element = element;
+        if self.element != None:
+            self.secondary = element.secondary()
+        else:
+            self.secondary = secondary
+        
         try: self.level = parent + 1
         except: self.level = 0 #error if parent does not implement __add__()
     
@@ -34,14 +41,15 @@ class Treemap:
         
         return string
     
+    def __repr__(self): return str(self)
     def hasChildren(self):
         return len(self.children) > 0
         
     def setChildren(self,values=np.random.rand(20)):
         self.children = [Treemap(value, level=self.level+1) for value in values]
     
-    def addChild(self, value=np.random.rand(), secondary=None):
-        self.children += [Treemap(value, parent=self, secondary=secondary)]
+    def addChild(self, element = None, value=np.random.rand(), secondary=None):
+        self.children += [Treemap(value,element = element, parent=self, secondary=secondary)]
         return self.children[-1]
     
     def append(self, child=None):
@@ -194,10 +202,10 @@ def flatten(l, ltypes=(list, tuple)):
 
 
 def compare(parentValue, childValue):
-#     x1,y1 = parentValue
-#     x2,y2 = childValue
-#     return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
-    return np.random.rand()
+    x1,y1 = parentValue
+    x2,y2 = childValue
+    return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
+#     return np.random.rand()
 
 def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = None):
     """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
@@ -243,7 +251,7 @@ def myBuildTreemap(faultList, parent=None, secondary_values=None):
     
     
     if parent == None:
-        parent = Treemap(value = np.sum( fault.value() for fault in faultList))
+        parent = Treemap(value = np.sum( fault.value() for fault in faultList), secondary = (1,1))
     
     if parent.level > 20:
         return [] #depth limit
@@ -263,87 +271,16 @@ def myBuildTreemap(faultList, parent=None, secondary_values=None):
                 subFaults[element] += [fault.subFault(element)]
         
         
-        
-        for faultList in subFaults.values():
-            child = parent.addChild(value = sum(fault.value() for fault in faultList), secondary = np.random.rand());
+        for element,faultList in subFaults.items():
+            child = parent.addChild(element = element, value = sum(fault.value() for fault in faultList), secondary = np.random.rand());
             
             if len(faultList) > 1:
                 myBuildTreemap(faultList, parent=child)
+        
     
     return parent
 
 
-class Element():
-    Bus = 'Bus'
-    Branch = 'Branch'
-    Gen = 'Gen'
-    def __init__(self, id=0, value=None):
-        self.id=id
-        self.value = value if value != None else np.random.rand()
-    
-    
-    def __repr__(self):
-        return self.type() + " %04d" % self.id
-    
-    def __eq__(self, other):
-        return True if self.type() == other.type() and self.id == other.id else False
-    
-    def __hash__(self):
-        #has the string representation of the element, eg 'bus 01'
-        return hash(str(self))
-    
-    def type(self):
-        return 'Element'
-
-class Branch(Element):
-    def type(self): return 'Branch'
-
-class Bus(Element):
-    def type(self): return 'Bus'
-
-class Gen(Element):
-    def type(self): return 'Gen'
-    
-class Fault:
-    
-    def __init__(self,listing, reduction = None):
-        listing = listing[0][0]
-        self.label = str(listing.label[0])
-        self.reduction = reduction
-        
-        def getList(myList):
-            zeroDim = [element for element in myList.shape if element != 0L]
-            return [element for element in listing.branch[0]] if len(zeroDim) > 1 else []
-        
-        self.elements = []
-        self.elements += [Branch(id=item) for item in getList(listing.branch)]
-        self.elements += [Bus(id=item) for item in getList(listing.bus)]
-        self.elements += [Gen(id=item) for item in getList(listing.gen)]
-    
-    def __str__(self):
-        return repr(self);
-    def __repr__(self):
-        def typeIds(mType): return [el.id for el in self.elements if el.type() == mType]
-        branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
-        string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
-        string = '\n%s' % string
-        
-        return string
-    
-    def value(self):
-        return self.reduction
-    
-    def getElements(self):
-        return self.elements
-    
-    def strip(self, stripElement):
-        self.elements = [el for el in self.elements if el != stripElement]
-    
-    def subFault(self, element):
-        from copy import copy
-        newFault = copy(self)
-        newFault.strip(element)
-        return newFault
 
 
 def main():
@@ -366,35 +303,54 @@ def main():
     
 print __name__
 
+#load cpf results from matlab file
 cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
-
-# cpfResults = scipy.io.loadmat('cpfResults')
 
 
 print [key for key in cpfResults.keys()]
-    
+
+
+#get loading, reductions, and corresponding faults    
 baseLoad = cpfResults['baseLoad'][0,0]
 
 CPF_reductions = baseLoad- cpfResults['CPFloads'][0];
-
-#CPFbranches should contain keys that refer to each element.
 CPFbranches = cpfResults['branchFaults'][0]
+
 base = cpfResults['base'][0,0]
+
+
+
+#convert fault listings into simple lists instead of scipy matlab structures
+def collapse(listing):
+    branch, bus, gen = [list(el[0]) if len(el) == 1 else list(el) for el in [listing.branch, listing.bus, listing.gen]]
+    return [str(listing.label[0]), branch, bus, gen]
+
+CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
+
+
+
+
+    
+
+
+nBranches = len(base.branch_geo[0])
+nBusses = len(base.bus_geo[0])
+nGens = len(base.gen)
+
+# branch_positions = {key: Line(line_geo).getPosition() for key, line_geo in branch_geo.items()}
+
+geo = defaultdict(None);
+geo[Branch] = {id: list([list(point) for point in el]) for id,el in zip(range(1, nBranches+1), base.branch_geo[0])}
+geo[Bus] = {id: list(el) for id,el in zip( base.bus.transpose()[0],base.bus_geo)}
+
+genBusses = [int(el) for el in base.gen.transpose()[0]]
+geo[Gen] = {id: geo[Bus][busNo] for  id,busNo in zip(range(1, nGens+1),genBusses)}
+Element.setgeo(geo)
 
 faults = [ Fault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions)]
 
-    
 myTreemap = myBuildTreemap(faults, secondary_values = np.random.rand(len(faults)));
 myTreemap.draw()
-
-
-# nBranches, rows = base.branch.shape
-# CPFbranches = [ list(branchList.flatten()) for branchList in CPFbranches]
-# 
-# branch_geo = {id: line_geo for id,line_geo in zip( range(1, nBranches+1), base.branch_geo[0]) }
-# branch_positions = {key: Line(line_geo).getPosition() for key, line_geo in branch_geo.items()}
-
-# myTreemap = buildTreemap(CPF_reductions, CPFbranches, secondary_values = branch_positions)
 
 # print myTreemap
 
