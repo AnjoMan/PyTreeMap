@@ -165,7 +165,7 @@ class Treemap:
         # start drawing the treemap. should be called only by top of drawing
         
         #get a canvas object for drawing
-        myCanvas = Treemap.defineCanvasObject(canvasX,canvasY,space)
+        myCanvas = Treemap.defineCanvasObject(canvasX+200,canvasY,space)
        
         #define rectangle in which to draw treemap
         pos = [space,space, canvasX-space, canvasX-space]
@@ -207,53 +207,14 @@ def compare(parentValue, childValue):
     return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
 #     return np.random.rand()
 
-def buildTreemap(CPF_reductions, CPFbranches,parent=None, secondary_values = None):
-    """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
-    
-    def clean_faultList(key, faultList):
-        """remove key from each cases element list (unless len == 1, which is assumed to be the fault involving that key alone"""
-        return [[el for el in fault if el != key] if len(fault)>1 else fault for fault in faultList]
-    
-    if parent==None: #top of the tree -> build parent node
-        parent = Treemap(value = np.sum(CPF_reductions), secondary = (1,1))
-    
-   
-    if parent.level > 20: return [] #depth limit
-    else:
-        #get list of different branch elements in the fault list
-        branchElements = set(flatten(CPFbranches))
-        
-        branchResultIndexes = defaultdict(list);
-        
-        for index,fault in enumerate(CPFbranches):
-            for element in fault:
-                branchResultIndexes[element] += [index]
-        
-        value = np.sum(CPF_reductions)
-        
-        subCPFbranches = {key: [CPFbranches[index] for index in value] for key,value in branchResultIndexes.items()}
-        subCPF_reductions = { key: [CPF_reductions[index] for index in value] for key,value in branchResultIndexes.items()}
-        subAreas = {key: np.sum(value) for key,value in subCPF_reductions.items()}
-        
-        
-        cleanCPFbranches = {key: clean_faultList(key, faultList) for key, faultList in subCPFbranches.items()}
-        
-        for key in subCPF_reductions.keys():
-            child = parent.addChild(value=subAreas[key], secondary=secondary_values[key])
-            
-            if len(cleanCPFbranches[key]) >1:#stop building tree when you reach single elements.
-                buildTreemap(subCPF_reductions[key],cleanCPFbranches[key],secondary_values = secondary_values,parent = child)
-        
-        return parent
-
-def myBuildTreemap(faultList, parent=None, secondary_values=None):
+def buildTreemap(faultList, parent=None, secondary_values=None):
     """Builds a Treemap given a list of faults (elements in each fault, value of reduction for that fault case)"""
     
     
     if parent == None:
         parent = Treemap(value = np.sum( fault.value() for fault in faultList), secondary = (1,1))
     
-    if parent.level > 20:
+    if parent.level >= 2:
         return [] #depth limit
     else:
         #get list of unique elements in faultList
@@ -275,7 +236,7 @@ def myBuildTreemap(faultList, parent=None, secondary_values=None):
             child = parent.addChild(element = element, value = sum(fault.value() for fault in faultList), secondary = np.random.rand());
             
             if len(faultList) > 1:
-                myBuildTreemap(faultList, parent=child)
+                buildTreemap(faultList, parent=child)
         
     
     return parent
@@ -349,8 +310,30 @@ Element.setgeo(geo)
 
 faults = [ Fault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions)]
 
-myTreemap = myBuildTreemap(faults, secondary_values = np.random.rand(len(faults)));
+subFaults = defaultdict(list)
+
+for fault in faults:
+        #for each element, copy the fault, strip the element, and add it to element's list.
+    for element in fault.getElements():
+        subFaults[element] += [fault.subFault(element)]
+
+subFaultVals = defaultdict(list)
+for id, subFaultList in subFaults.items():
+    values = [fault.value() for fault in subFaultList]
+    subFaultVals[id] = sum(values)
+
+minFault = min(subFaultVals.items(), key=subFaultVals.get)
+
+sortedFaults = sorted(subFaultVals.items(), key=subFaultVals.get)
+myEl = sortedFaults[-1]
+element, value = myEl
+
+myFaults = subFaults[element]
+
+myTreemap = buildTreemap(myFaults)
 myTreemap.draw()
+# myTreemap = buildTreemap(faults, secondary_values = np.random.rand(len(faults)));
+# myTreemap.draw()
 
 # print myTreemap
 
