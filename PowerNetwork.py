@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from collections import defaultdict
 
-class Element():
+class Element(object):
     geo = defaultdict(None)
     
     def __init__(self, id=0, value=None):
@@ -44,32 +44,23 @@ class Gen(Element): pass
 
 class Transformer(Element): pass
     
-class Fault:
+class Fault(object):
     
     def __init__(self,listing, reduction = None):
-        #ideally processing of input data to produce listings should be done outside of this, since it is input-data specific
-        
-        label, branch, bus, gen = listing; 
-#         print branch
-        
-#         for el in branch: print el
-#         listing = listing[0][0]
-        self.label = label
+        #listing is a dictionary containing:
         self.reduction = reduction
-        
-#         def getList(myList):
-#             zeroDim = [element for element in myList.shape if element != 0L]
-#             return [element for element in listing.branch[0]] if len(zeroDim) > 1 else []
+        self.label = listing['label'] if 'label' in listing else 'none'
+        if 'label' in listing: del listing['label']
         
         self.elements = []
-        self.elements += [Branch(id=item) for item in branch]
-        self.elements += [Bus(id=item) for item in bus]
-        self.elements += [Gen(id=item) for item in gen]
-        
+        for elType in listing.keys():
+            self.elements += [elType(id = item) for item in listing[elType]]
+#         
+        self.siblings = []
         
     
     def __repr__(self):
-        return 'Fault, ({})'.format(repr(self.elements))
+        return 'Fault ({})'.format(repr(self.elements))
     def __str__(self):
         def typeIds(mType): return [el.id for el in self.elements if el.__class__.__name__ == mType]
         branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
@@ -85,12 +76,14 @@ class Fault:
         return self.elements
     
     def strip(self, stripElement):
-        self.elements = [el for el in self.elements if el != stripElement]
+        self.elements, strip = [el for el in self.elements if el != stripElement], [el for el in self.elements if el == stripElement]
+        return strip
     
     def subFault(self, element):
         from copy import copy
         newFault = copy(self)
-        newFault.strip(element)
+        strip = newFault.strip(element)
+        newFault.siblings += strip
         return newFault
 
 class Line:
@@ -138,7 +131,25 @@ class Line:
     
     def getPosition(self):
         return self.getMidpoint()
-        
+
+
+def flatten(l, ltypes=(list, tuple)):
+    # method to flatten an arbitrarily deep nested list into a flat list
+    ltype = type(l)
+    l = list(l)
+    i = 0
+    while i < len(l):
+        while isinstance(l[i], ltypes):
+            if not l[i]:
+                l.pop(i)
+                i -= 1
+                break
+            else:
+                l[i:i + 1] = l[i]
+        i += 1
+    return ltype(l)
+    
+
 
 def main():
     
