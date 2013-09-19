@@ -99,24 +99,34 @@ class TreeFault(Fault):
     def addConnection(self,connection):
         self.connections += [connection]
     
-    def connectorPos(self):
-        x,y = pos
+    def topConnectorPos(self):
+        x,y = self.pos
         return x,y-TreeFault.radius
+    
+    def bottomConnectorPos(self):
+        x,y = self.pos
+        return x,y+TreeFault.radius
+    
     def draw(self,canvas, painter):
         #this method would be called by PySideCanvas when given using PySideCanvasObj.draw(fault)
         x,y = self.pos
         r = 10
         
 #         fill = {Bus:QtGui.QColor(200, 0, 0), Gen:QtGui.QColor(255, 80, 0, 160), Branch:QtGui.QColor(25, 0, 90, 200), Transformer: QtGui.QColor(25,80,200,100)}
-        
+        painter.setRenderHint(QtGui.Q
         painter.drawEllipse( QtCore.QPoint(x,y), TreeFault.radius,TreeFault.radius)
         text = str( self.elements[0].id)
         metrics = painter.fontMetrics()
         fw, fh = metrics.width(text), metrics.height()
 #         fw,fh = QtGui.QFontMetrics.width(text), QtGui.QFontMetrics.xheight()
         painter.drawText(x-fw/2, y+fh/4, text)
-        
-        
+    
+    def drawConnections(self, canvas):
+        for other in self.connections:
+            xT,yT = self.bottomConnectorPos()
+            xB,yB = other.topConnectorPos()
+            pos = [xT,yT,xB,yB] 
+            canvas.drawLine(pos)
 
 #get faults
 faults = [ TreeFault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions) if reduction > 0]
@@ -136,33 +146,51 @@ for level, nextLevel in zip( keys[0:-1], keys[1:]):
         for subFault in faultTree[nextLevel]:
             fault.addConnection(subFault)
         
-        
-app = QtGui.QApplication(sys.argv)
-
-width, height=  1700,800
-myCanvas = PySideCanvas(width, height, 'Fault Tree')
-
-
 
 myFault = TreeFault( {Branch:[1,2,3], Gen:[4], Bus:[8,9], Transformer:[]})
 myFault.pos = 30,30
 
-# myCanvas.draw(myFault)
-print width, len(faultTree[1])
-gap = round(width/(len(faultTree[1])))
-# gap = max(TreeFault.radius*2 + 5, gap)
-x = gap
-y = 40
-for fault in faultTree[1]:
-    fault.setPos( (x,y) )
-    myCanvas.draw(fault)
-    x+=gap
-sys.exit(app.exec_())
+
+width, height=  1700,800
+
+
+def hspacing(numEls, width):
+    print numEls, width
+    sideGap = max(round(width * (20-0.2*numEls) / 100), 10)
+    gap = max(TreeFault.radius*2+5, round((width-2*sideGap)/(numEls-1)) )
+    return sideGap, gap
+
+def drawRows(faultTree, width, height):
+    y = round(0.15*height)
+    ygap = (height - y*2) / (len(faultTree.keys()) - 1)
+    for level in faultTree.values():
+        sideGap, gap = hspacing(len(level), width)
+        print sideGap, gap, len(level)
+        x = sideGap
+        for fault in level:
+            fault.setPos((x,y))
+            myCanvas.draw(fault)
+            x+= gap
+        
+        y+= ygap
+    
+
+# app = QtGui.QApplication(sys.argv)
+# myCanvas = PySideCanvas(width, height, 'Fault Tree')
+# myCanvas.drawOutline([0,0,1700,800],1)
+# 
+# 
+# drawRows(faultTree, width, height)
+# 
+# for level in faultTree.values():
+#     for fault in level:
+#         fault.drawConnections(myCanvas)
+# sys.exit(app.exec_())
 
 
 # Treemap.compare = compare
-# myTreemap = buildTreemap(faults)
-# myTreemap.draw()
+myTreemap = buildTreemap(faults)
+myTreemap.draw()
 
 # print myTreemap0
 # myTreemap.draw()

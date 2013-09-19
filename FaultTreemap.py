@@ -63,14 +63,16 @@ class Treemap:
         
         #toolbox-specific code to draw a rectangle
 #         myCanvas.create_rectangle(x1,y1, xn, yn, fill=color, width=0)
-        myCanvas.addRectangle([x1,y1,xn,yn], color=color)
+        myCanvas.drawRectangle([x1,y1,xn,yn], color=color)
     
     def drawOutline(self,myCanvas, pos, borderColor="#000000"):
         x1,y1,xn,yn = pos
-        borderWidth= max(0,2-self.level);
-        
+        borderWidth= max(0,3-self.level);
+        colorWeight = round(max(0,self.level-1)/6.0 * 255)
+        borderColor = '#%02X%02X%02X' % (colorWeight, colorWeight, colorWeight)
+        print borderColor, borderWidth
         #toolbox-specific code to draw outline
-        myCanvas.drawOutline(pos, borderWidth)
+        myCanvas.drawOutline(pos, borderWidth, color = borderColor)
 #         myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth, outline = borderColor)
 
     @staticmethod
