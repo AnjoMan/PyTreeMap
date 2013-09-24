@@ -1,21 +1,40 @@
-class Circle(object):
+from PySide import QtGui, QtCore
+
+import sys
+
+
+
+
+class Example(QtGui.QWidget):
     
-    def __init__(self, id):
-        self.id = id
+    def __init__(self):
+        super(Example, self).__init__()
+        
+        self.initUI()
     
-    def __repr__(self):
-        return 'Circle, id: %d' % self.id
+    def initUI(self):
+        
+        self.setGeometry(300,300,250,250)
+        self.setWindowTitle('Drawing Pies')
+        self.show()
+    
+    def paintEvent(self,e):
+        
+        qp = QtGui.QPainter()
+        
+        qp.begin(self)
+        qp.setRenderHint(QtGui.QPainter.Antialiasing)
+        qp.setBrush(QtGui.QColor('#19005A'))
+        qp.setPen(QtGui.QColor(100,100,100))
+        qp.drawPie( 100,100,80,80, 0, (16*360) * 0.3)
+        qp.end() 
 
 
 
+app = QtGui.QApplication(sys.argv)
 
-def createObj(object, id):
-    return object(id)
-
-
+ex = Example()
 
 
 
-newCircle = createObj(Circle, 2)
-
-print newCircle
+sys.exit(app.exec_())

@@ -52,7 +52,7 @@ class PySideCanvas(QtGui.QWidget):
         qp = QtGui.QPainter()
         qp.begin(self)
         
-        qp.setRenderHint(QtGui.QPainter.Antialiasing)
+#         qp.setRenderHint(QtGui.QPainter.Antialiasing)
         #draw rectangles
         
         for rectangle, color in zip(self.rectangles, self.colors):

@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 
 class Element(object):
+    color = '#F0F0F0'
     geo = defaultdict(None)
     
     def __init__(self, id=0, value=None):
@@ -32,17 +33,21 @@ class Element(object):
         Element.geo = geo
 
 class Branch(Element):
+    color = '#C80000'
     def secondary(self):
         geo = self.getGeo()
         return Line(geo).getPosition()
         
         
 
-class Bus(Element): pass
+class Bus(Element): 
+    color = '#FF5000'
 
-class Gen(Element): pass
+class Gen(Element):
+    color = '#19005A'
 
-class Transformer(Element): pass
+class Transformer(Element):
+    color = '#4CD9D9'
     
 class Fault(object):
     
@@ -62,12 +67,13 @@ class Fault(object):
     def __repr__(self):
         return 'Fault ({})'.format(repr(self.elements))
     def __str__(self):
-        def typeIds(mType): return [el.id for el in self.elements if el.__class__.__name__ == mType]
-        branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
-        string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
-        string = '\n%s' % string
-        
-        return string
+#         def typeIds(mType): return [el.id for el in self.elements if el.__class__.__name__ == mType]
+#         branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
+#         string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
+#         string = '\n%s' % string
+#         
+#         return string
+        return repr(self)
     
     def value(self):
         return self.reduction

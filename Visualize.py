@@ -7,7 +7,7 @@ from collections import defaultdict
 from PowerNetwork import *
 from Treemap import layout
 from FaultTreemap import *
-
+from sets import Set
 import sys
 
 
@@ -108,18 +108,57 @@ class TreeFault(Fault):
         return x,y+TreeFault.radius
     
     def draw(self,canvas, painter):
+        
+        
+        nElements = len(self.elements)
         #this method would be called by PySideCanvas when given using PySideCanvasObj.draw(fault)
         x,y = self.pos
-        r = 10
+        r = TreeFault.radius
         
-#         fill = {Bus:QtGui.QColor(200, 0, 0), Gen:QtGui.QColor(255, 80, 0, 160), Branch:QtGui.QColor(25, 0, 90, 200), Transformer: QtGui.QColor(25,80,200,100)}
-        painter.setRenderHint(QtGui.Q
-        painter.drawEllipse( QtCore.QPoint(x,y), TreeFault.radius,TreeFault.radius)
-        text = str( self.elements[0].id)
-        metrics = painter.fontMetrics()
-        fw, fh = metrics.width(text), metrics.height()
-#         fw,fh = QtGui.QFontMetrics.width(text), QtGui.QFontMetrics.xheight()
-        painter.drawText(x-fw/2, y+fh/4, text)
+        x0,y0, x_,y_ = x-r,y-r,2*r,2*r
+        
+        startAngle=0;
+        arcAngle = 360 * 1/len(self.elements)
+        
+        painter.setPen(QtCore.Qt.NoPen)
+        
+        painter.setFont(QtGui.QFont('serif', 6))
+        
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        
+        def putText(qp,x,y,text):
+            metrics = qp.fontMetrics()
+            fw,fh = metrics.width(text),metrics.height()
+            qp.drawText(x-fw/2,y+fh/4,text)
+        
+        for index,element in enumerate(self.elements):
+            painter.setBrush(QtGui.QColor(element.__class__.color))
+            painter.drawPie(x0,y0,x_,y_, round(startAngle*16), round(arcAngle*16))
+            
+            lAngle = startAngle + (arcAngle/2.0)  #in degrees
+            rd = 3.0/5 * r if nElements > 1 else 0
+            
+            yd = y + rd * np.sin(np.pi/180 * lAngle)
+            xd = x + rd * np.cos(np.pi/180 * lAngle)
+            print xd, yd
+            painter.setPen(QtGui.QColor(0,0,0))
+#             painter.drawPoint(xd,yd)
+            putText(painter, xd,yd,str(element.id))
+            painter.setPen(QtCore.Qt.NoPen)
+            startAngle += arcAngle
+        
+        
+        
+        print '\n'
+#         painter.drawEllipse( QtCore.QPoint(x,y), TreeFault.radius,TreeFault.radius)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
+        
+        
+        
+        
+        
+        painter.setPen(QtGui.QColor(0,0,0))
+#         putText(painter, x,y, str(self.elements[0].id))
     
     def drawConnections(self, canvas):
         for other in self.connections:
@@ -139,12 +178,16 @@ for fault in faults:
 print faultTree[0]
 del faultTree[0]
 
+from sets import Set
+
 connections = defaultdict(dict)
 keys = sorted(faultTree.keys())
 for level, nextLevel in zip( keys[0:-1], keys[1:]):
     for fault in faultTree[level]:
+        faultEls = Set(fault.elements)
         for subFault in faultTree[nextLevel]:
-            fault.addConnection(subFault)
+            if faultEls.issubset(Set(subFault.elements)):
+                fault.addConnection(subFault)
         
 
 myFault = TreeFault( {Branch:[1,2,3], Gen:[4], Bus:[8,9], Transformer:[]})
@@ -175,22 +218,22 @@ def drawRows(faultTree, width, height):
         y+= ygap
     
 
-# app = QtGui.QApplication(sys.argv)
-# myCanvas = PySideCanvas(width, height, 'Fault Tree')
-# myCanvas.drawOutline([0,0,1700,800],1)
-# 
-# 
-# drawRows(faultTree, width, height)
-# 
-# for level in faultTree.values():
-#     for fault in level:
-#         fault.drawConnections(myCanvas)
+app = QtGui.QApplication(sys.argv)
+myCanvas = PySideCanvas(width, height, 'Fault Tree')
+myCanvas.drawOutline([0,0,1700,800],1)
+
+
+drawRows(faultTree, width, height)
+
+for level in faultTree.values():
+    for fault in level:
+        fault.drawConnections(myCanvas)
 # sys.exit(app.exec_())
 
 
 # Treemap.compare = compare
-myTreemap = buildTreemap(faults)
-myTreemap.draw()
+# myTreemap = buildTreemap(faults)
+# myTreemap.draw()
 
 # print myTreemap0
 # myTreemap.draw()
