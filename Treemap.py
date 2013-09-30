@@ -6,7 +6,7 @@ import colorsys
 
 def randomColor():
     h,s,v = np.random.rand(3)
-    print h,s,v
+#     print h,s,v
     r,g,b = colorsys.hsv_to_rgb(h, s*0.6+0.3, v*0.4+0.5)
     return '#%02X%02X%02X' % (r*255, g*255, b*255)
 

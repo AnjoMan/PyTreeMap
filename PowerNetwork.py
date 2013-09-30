@@ -33,7 +33,7 @@ class Element(object):
         Element.geo = geo
 
 class Branch(Element):
-    color = '#C80000'
+    color = '#DB0058'
     def secondary(self):
         geo = self.getGeo()
         return Line(geo).getPosition()
@@ -41,13 +41,13 @@ class Branch(Element):
         
 
 class Bus(Element): 
-    color = '#FF5000'
+    color = '#408Ad2'
 
 class Gen(Element):
-    color = '#19005A'
+    color = '#FF9700'
 
 class Transformer(Element):
-    color = '#4CD9D9'
+    color = '#80E800'
     
 class Fault(object):
     

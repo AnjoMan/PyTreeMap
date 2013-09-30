@@ -70,7 +70,7 @@ class Treemap:
         borderWidth= max(0,3-self.level);
         colorWeight = round(max(0,self.level-1)/6.0 * 255)
         borderColor = '#%02X%02X%02X' % (colorWeight, colorWeight, colorWeight)
-        print borderColor, borderWidth
+#         print borderColor, borderWidth
         #toolbox-specific code to draw outline
         myCanvas.drawOutline(pos, borderWidth, color = borderColor)
 #         myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth, outline = borderColor)
@@ -113,7 +113,8 @@ class Treemap:
         #for levels beyond 1, vary the hue given by seed
         elif self.level > 1:
             h,s,v = hsv(seed)
-            h = h + ( np.random.rand()  ) *3/10.0 * np.log10(2)/np.log10(self.level)
+#             h = h + ( np.random.rand()  ) *3/10.0 * np.log10(2)/np.log10(self.level)
+            h = h + (np.random.rand()) * 3/10.0 * 1/self.level
             s = (secondary_weight)*0.4+0.2 if secondary_weight != None else s + (np.random.rand()-0.5)*2/10
 #             v = (1-secondary_weight)*0.4+0.5 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10
             v = (1-secondary_weight)*0.6+0.4 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10

@@ -1,40 +1,18 @@
 from PySide import QtGui, QtCore
 
 import sys
+import numpy as np
+import colorsys
 
-
-
-
-class Example(QtGui.QWidget):
+class Circle(object):
     
-    def __init__(self):
-        super(Example, self).__init__()
-        
-        self.initUI()
-    
-    def initUI(self):
-        
-        self.setGeometry(300,300,250,250)
-        self.setWindowTitle('Drawing Pies')
-        self.show()
-    
-    def paintEvent(self,e):
-        
-        qp = QtGui.QPainter()
-        
-        qp.begin(self)
-        qp.setRenderHint(QtGui.QPainter.Antialiasing)
-        qp.setBrush(QtGui.QColor('#19005A'))
-        qp.setPen(QtGui.QColor(100,100,100))
-        qp.drawPie( 100,100,80,80, 0, (16*360) * 0.3)
-        qp.end() 
+    def radius(self):
+        print self
 
 
 
-app = QtGui.QApplication(sys.argv)
 
-ex = Example()
+mCircle = Circle()
 
-
-
-sys.exit(app.exec_())
+mCircle.radius()
+Circle.radius()

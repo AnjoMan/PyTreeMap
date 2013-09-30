@@ -74,11 +74,12 @@ class PySideCanvas(QtGui.QWidget):
                 qp.drawLine(x0,y0,xn,yn)
         
         #draw lines
+        qp.setRenderHint(QtGui.QPainter.Antialiasing,True)
         pen.setWidth(1)
         qp.setPen(pen)
         for x0,y0,xn,yn in self.lines:
             qp.drawLine(x0,y0,xn,yn)
-        
+        qp.setRenderHint(QtGui.QPainter.Antialiasing, False)
         #draw objects
         for obj in self.objs:
             obj.draw(self, qp)
