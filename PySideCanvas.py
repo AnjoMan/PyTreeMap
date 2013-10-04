@@ -65,6 +65,7 @@ class PySideCanvas(QtGui.QWidget):
         pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
        
         for (x0,y0,xn,yn), border, color in self.outlines:
+#             print color.red(), color.green(), color.blue()
             segments = [ [ x0,y0, xn, y0], [x0,y0,x0,yn],[x0,yn,xn,yn], [xn,y0,xn,yn]]
             pen.setColor(color)
             pen.setWidth(border)

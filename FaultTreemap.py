@@ -10,6 +10,13 @@ from Treemap import layout
 from PySideCanvas import *
 import sys
 
+    
+def static_var(varname, value):
+    def decorate(func):
+        setattr(func, varname, value)
+        return func
+    return decorate
+
 class Treemap:
     
     @staticmethod
@@ -26,14 +33,14 @@ class Treemap:
         
         try: self.level = parent + 1
         except: self.level = 0 #error if parent does not implement __add__()
-    
+
     #use this to get the level of a Treemap and increment it:
     def __add__(self, other): return self.level + other;
     def __radd__(self,other): self.__add__(other)
         
     def __str__(self):
         string = " | "*self.level + "Treemap node, value = " + ("%8.2f" % self.value)
-        string += ", subvalue = " + str(self.secondary) if self.secondary != None else ""
+#         string += ", subvalue = " + str([int(r) for r in self.secondary]) if self.secondary != None else ""
         string += ", level: " + str(self.level) + "; " 
         string += ("%d sub-nodes" % len(self.children)) if len(self.children)>0 else ""
         for child in self.children: string += "\n" + child.__str__()
@@ -62,31 +69,26 @@ class Treemap:
         x1,y1,xn,yn = x1+sliver, y1+sliver,xn-sliver, yn-sliver
         
         #toolbox-specific code to draw a rectangle
-#         myCanvas.create_rectangle(x1,y1, xn, yn, fill=color, width=0)
         myCanvas.drawRectangle([x1,y1,xn,yn], color=color)
     
     def drawOutline(self,myCanvas, pos, borderColor="#000000"):
         x1,y1,xn,yn = pos
         borderWidth= max(0,3-self.level);
-        colorWeight = round(max(0,self.level-1)/6.0 * 255)
+        colorWeight = round(max(0,self.level)/15.0 * 255)
+#         print self.level, colorWeight
         borderColor = '#%02X%02X%02X' % (colorWeight, colorWeight, colorWeight)
-#         print borderColor, borderWidth
         #toolbox-specific code to draw outline
         myCanvas.drawOutline(pos, borderWidth, color = borderColor)
-#         myCanvas.create_rectangle(x1,y1,xn,yn, width = borderWidth, outline = borderColor)
 
     @staticmethod
     def defineCanvasObject(width,height,border, name="Treemap"):
         #toolbox-specific code to define drawing space
-#         master = Tk.Tk(); 
-#         master.title("Fault TreeMap")
-#         myCanvas = Tk.Canvas(master, width=width, height=height)
-#         myCanvas.pack()
-#         return myCanvas
         return PySideCanvas(width, height, name)
+
     
     
-    def randomColor(self, h=None, s=0.3, v=0.7, seed='#998899', secondary_weight = None):
+    @static_var('seed', 0)
+    def randomColor(self, h=None, s=0.6, v=0.7, seed='#998899', secondary_weight = None):
         def clamp(*vals): #keep values in range 0-1 with capping
             lst = [min(1,max(0,val)) for val in vals]
             return lst if len(lst) > 1 else lst[0]
@@ -107,17 +109,20 @@ class Treemap:
         #for level 1, pick a random hue
         elif self.level==1:
             if not type(h) == float: 
-                h=float(np.random.rand())
+#                 h=round(np.random.rand(),1)
+                h = self.randomColor.__func__.seed + 0.3 + round(np.random.rand()/20.0,1)
+                self.randomColor.__func__.seed = h
             return rgb(h,s,v)
         
         #for levels beyond 1, vary the hue given by seed
         elif self.level > 1:
             h,s,v = hsv(seed)
 #             h = h + ( np.random.rand()  ) *3/10.0 * np.log10(2)/np.log10(self.level)
-            h = h + (np.random.rand()) * 3/10.0 * 1/self.level
-            s = (secondary_weight)*0.4+0.2 if secondary_weight != None else s + (np.random.rand()-0.5)*2/10
+            h = h + (np.random.rand()) * 7/10.0 * 1/(self.level**2)
+            s = (secondary_weight)*0.4+0.3 if secondary_weight != None else s + (np.random.rand()-0.5)*2/10
 #             v = (1-secondary_weight)*0.4+0.5 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10
-            v = (1-secondary_weight)*0.6+0.4 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10
+            v = (1-secondary_weight)*0.5+0.5 if secondary_weight != None else s+ (np.random.rand()-0.5)*1/10
+# s,v = 0.3,0.7
             h,s,v = [mod(h)]+ clamp(s,v)
             return rgb(h,s,v)
     
@@ -126,7 +131,6 @@ class Treemap:
     def drawTreeMap(self, myCanvas,pos,sliver=0, secondary_weight=None, colorSeed=None):
         
         color = self.randomColor(seed=colorSeed, secondary_weight = secondary_weight)
-        
         if self.hasChildren():
             #draw sub-tree
             values = [treemap.value for treemap in self.children]
@@ -150,6 +154,7 @@ class Treemap:
         else:
             sliver= max(0,2-self.level);
             Treemap.canvas_drawRectangle(myCanvas, pos, color=color)
+            
     
     
     def draw(self, canvasX=810,canvasY=810,space=10):
@@ -169,22 +174,9 @@ class Treemap:
         pos = [space, space, canvasX-space, canvasY-space]
         self.drawTreeMap(myCanvas,pos, sliver=space)
         
-        myCanvas.drawOutline(pos, 2)
+        myCanvas.drawOutline(pos,3)
         sys.exit(app.exec_())
-        
-    def drawTkinter(self,canvasX, canvasY, space):
-        # start drawing the treemap. should be called only by top of drawing
-        
-        #get a canvas object for drawing
-        myCanvas = Treemap.defineCanvasObject(canvasX,canvasY,space)
-       
-        #define rectangle in which to draw treemap
-        pos = [space,space, canvasX-space, canvasX-space]
-        
-        self.drawTreeMap(myCanvas,pos, sliver=space)
-        
 
-        Tk.mainloop()
 
 
 def compare(parentValue, childValue):
@@ -200,7 +192,7 @@ def buildTreemap(faultList, parent=None, secondary_values=None):
     if parent == None:
         parent = Treemap(value = np.sum( fault.value() for fault in faultList), secondary = (1,1))
     
-    if parent.level >= 3:
+    if parent.level >= 4:
         return [] #depth limit
     else:
         #get list of unique elements in faultList
