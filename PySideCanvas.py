@@ -1,5 +1,6 @@
 from PySide import *
 
+
 class PySideCanvas(QtGui.QWidget):
     def __init__(self, width, height, title):
         super(PySideCanvas, self).__init__()

@@ -52,7 +52,7 @@ class Transformer(Element):
 class Fault(object):
     
     def __init__(self,listing, reduction = None):
-        #listing is a dictionary containing:
+        #listing is a dictionary containing: label, elements
         self.reduction = reduction
         self.label = listing['label'] if 'label' in listing else 'none'
         if 'label' in listing: del listing['label']
@@ -61,8 +61,9 @@ class Fault(object):
         for elType in listing.keys():
             self.elements += [elType(id = item) for item in listing[elType]]
 #         
-        self.siblings = []
+        self.connections = []
         
+    
     
     def __repr__(self):
         return 'Fault ({})'.format(repr(self.elements))
@@ -75,12 +76,16 @@ class Fault(object):
 #         return string
         return repr(self)
     
+    
     def value(self):
         return self.reduction
     
     def getElements(self):
         return self.elements
     
+    def addConnection(self,connection):
+        self.connections += [connection]
+        
     def strip(self, stripElement):
         self.elements, strip = [el for el in self.elements if el != stripElement], [el for el in self.elements if el == stripElement]
         return strip

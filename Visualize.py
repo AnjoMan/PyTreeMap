@@ -8,6 +8,7 @@ from PowerNetwork import *
 from Treemap import layout
 from FaultTreemap import *
 from FaultTree import *
+from TreemapDraw import *
 from sets import Set
 import sys
 
@@ -89,41 +90,79 @@ def getGeo(base):
 #get geo-points for different elements
 Element.setgeo(getGeo(base))
 
+def getFaults(FaultType, CPFbranches, CPF_reductions):
+    #get faults
+    faults = [ FaultType(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions) if reduction > 0]
+    
+    faultTree = defaultdict(list)
+    
+    #sort faults by number of element in each
+    for fault in faults:
+        faultTree[len(fault.getElements())] += [fault]
+    
+    print faultTree[0]
+    del faultTree[0]
+    
+    from sets import Set
+    
+    #identify connections
+    connections = defaultdict(dict)
+    keys = sorted(faultTree.keys())
+    for level, nextLevel in zip( keys[0:-1], keys[1:]):
+        for fault in faultTree[level]:
+            faultEls = Set(fault.elements)
+            for subFault in faultTree[nextLevel]:
+                if faultEls.issubset(Set(subFault.elements)):
+                    fault.addConnection(subFault)
+            
+    
+    return faults, faultTree
 
-#get faults
-faults = [ TreeFault(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions) if reduction > 0]
 
-faultTree = defaultdict(list)
-
-#sort faults by number of element in each
-for fault in faults:
-    faultTree[len(fault.getElements())] += [fault]
-
-print faultTree[0]
-del faultTree[0]
-
-from sets import Set
-
-#identify connections
-connections = defaultdict(dict)
-keys = sorted(faultTree.keys())
-for level, nextLevel in zip( keys[0:-1], keys[1:]):
-    for fault in faultTree[level]:
-        faultEls = Set(fault.elements)
-        for subFault in faultTree[nextLevel]:
-            if faultEls.issubset(Set(subFault.elements)):
-                fault.addConnection(subFault)
-        
 
 width, height=  1700,800
 
 
-def subTree(fault):
-    myTree = defaultdict(list)
+
+def subTreeValue(fault):
+    total=fault.value() + sum([subTreeValue(subFault) for subFault in fault.connections])
+    return total
+
+def mBuildTreeMap(mWindow,faultTree,square, level = 3):
     
-    for subFault in fault.connections
+    def recursive_build(faultList, square, level):
+
+        x0,y0,xn,yn = square
+        square = [x0+1,y0+1,xn-1,yn-1]
+        if len(faultList) == 0:
+            return None
+        
+        #lay out faults
+        rectangles = layout([subTreeValue(fault) for fault in faultList], square)
+#         import pdb; pdb.set_trace()
+        if len(faultList[0].elements) >= level:
+            #lay out faults and add a rectangle widget to each fault
+            for fault,rectangle in zip(faultList,rectangles):
+                xa,ya,xb,yb = rectangle
+                fault.addRectangle(mWindow,[xa,ya, xb-xa, yb-ya])
+#                 mWindow.addWidget(fault)
+        else:
+            for fault, rectangle in zip(faultList, rectangles):
+                randomColor(len(fault.elements))
+                recursive_build(fault.connections, rectangle, level)
+    
+    recursive_build(faultTree[1], square, level)
+ 
+
+app = QtGui.QApplication(sys.argv)
+
+(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
 
 
+
+mWindow = Window()
+mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
+    
     
 ## draw a  tree diagram
 # app = QtGui.QApplication(sys.argv)

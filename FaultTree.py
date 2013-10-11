@@ -47,10 +47,7 @@ class TreeFault(Fault):
         
     def setPos(self,pos):
         self.pos = pos;
-    
-    def addConnection(self,connection):
-        self.connections += [connection]
-    
+
     def topConnectorPos(self):
         x,y = self.pos
 #         return x,y-self.radius()
