@@ -69,6 +69,7 @@ class TreeMapFault(Fault):
     def addRectangle(self, mWindow, pos):
         newRectangle = Rectangle(pos, mWindow)
         newRectangle.setColor(len(self.elements))
+        newRectangle.setFault(self)
         
     
 class Rectangle(QWidget):
@@ -78,14 +79,16 @@ class Rectangle(QWidget):
         super(self.__class__,self).__init__(parent)
         if parent != None: self.show()
         self.setGeometry(*pos)
+        self.fault = None
+        self.color = QColor(200,100,100)
     
     def setColor(self,level):
         self.color=randomColor(level)
     def enterEvent(self, e):
-        print 'Enter'
+        print self.fault
     
     def leaveEvent(self, e):
-        print 'Leave'
+        pass
 
     def paintEvent(self, e):
         

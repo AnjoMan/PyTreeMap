@@ -154,15 +154,18 @@ def mBuildTreeMap(mWindow,faultTree,square, level = 3):
     recursive_build(faultTree[1], square, level)
  
 
-app = QtGui.QApplication(sys.argv)
-
-(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
 
 
-
-mWindow = Window()
-mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
-    
+## draw a responsive tree diagram
+# app = QtGui.QApplication(sys.argv)
+# 
+# (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
+# 
+# 
+# 
+# mWindow = Window()
+# mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
+#     
     
 ## draw a  tree diagram
 # app = QtGui.QApplication(sys.argv)
