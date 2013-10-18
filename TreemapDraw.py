@@ -30,12 +30,15 @@ def randomColor(level=1):
         
 class Window(QWidget):
     
-    def __init__(self):
+    def __init__(self, pos=None):
         super(self.__class__, self).__init__()
-        
+        if pos == None:
+            x,y,w,h = 100,100,900,900
+        else:
+            x,y,w,h = pos
         self.widgets = []
         self.setMouseTracking(True)
-        self.setGeometry(100,100,900,900)
+        self.setGeometry(x,y,w,h)
         self.setWindowTitle('Window')
         self.show()
         

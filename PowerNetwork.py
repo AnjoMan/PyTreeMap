@@ -6,9 +6,10 @@ class Element(object):
     color = '#F0F0F0'
     geo = defaultdict(None)
     
-    def __init__(self, id=0, value=None):
+    def __init__(self, id, pos):
         self.id=id
-        self.value = value if value != None else np.random.rand()
+        self.pos = pos
+#         self.value = value if value != None else np.random.rand()
     
     
     def __repr__(self):
@@ -24,6 +25,8 @@ class Element(object):
     def getGeo(self):
         return Element.geo[self.__class__][self.id]
     
+    def getPos(self):
+        return self.pos
     def secondary(self):
         geo = self.getGeo()
         return geo
@@ -35,19 +38,33 @@ class Element(object):
 class Branch(Element):
     color = '#DB0058'
     def secondary(self):
-        geo = self.getGeo()
-        return Line(geo).getPosition()
+        return Line(self.pos).getPosition()
         
-        
-
 class Bus(Element): 
     color = '#408Ad2'
+    def __init__(self, id, pos):
+        self.id = id
+        self.pos = pos
 
 class Gen(Element):
     color = '#FF9700'
+    def __init__(self, id, bus):
+        self.id = id
+        self.bus = bus
+    
+    def getPos(self):
+        return self.bus.getPos()
 
 class Transformer(Element):
     color = '#80E800'
+    
+    def __init__(self, id, elements):
+        self.id = id
+        self.elements = elements
+    
+    def getPos(self):
+        pass
+        
     
 class Fault(object):
     
@@ -57,9 +74,12 @@ class Fault(object):
         self.label = listing['label'] if 'label' in listing else 'none'
         if 'label' in listing: del listing['label']
         
-        self.elements = []
-        for elType in listing.keys():
-            self.elements += [elType(id = item) for item in listing[elType]]
+        self.elements = listing['elements']
+
+        
+#         self.elements = []
+#         for elType in listing.keys():
+#             self.elements += [elType(id = item) for item in listing[elType]]
 #         
         self.connections = []
         

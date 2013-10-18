@@ -36,59 +36,105 @@ base = cpfResults['base'][0,0]
 
 
 
-#convert fault listings into simple lists instead of scipy matlab structures
-def collapse(listing):
-    branch, bus, gen, trans = [list(el[0]) if len(el) == 1 else list(el) for el in [listing.branch, listing.bus, listing.gen, listing.trans]]
-    relisting = defaultdict(list)
-    relisting['label'], relisting[Branch], relisting[Bus], relisting[Gen], relisting[Transformer] =str(listing.label[0]), branch, bus, gen, trans
-    return relisting
 
-CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
+
 
 
 
 
 branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
 
+nBranches = len(base.branch)
+nBusses = len(base.bus)
+nGens = len(base.gen)
+nTrans = len(base.trans[0])
+elements = defaultdict(list)
+
+def getBranchId(busEnds):
+    #find the branch index of a branch from the busses it connects to.
+    busEnds = Set(busEnds)
+    mIndex = -1
+    for index, branch in enumerate(branchBusEnds):
+        mBranch = Set(branch)
+        intersection = Set.intersection(mBranch, busEnds)
+        if len( intersection) > 1: return index
+    return mIndex
+
+def getGenId(bus):
+    #find the id of a generator given the bus it is in
+    return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
+
+def getTransEls(trans):
+    transEls = []
+    #get branches involved
+    transEls += [ elements[Branch][getBranchId(listing)] for listing in (trans[0][0] if len(trans[0]) > 0 else [])]
+    #get busses involved
+#     import pdb; pdb.set_trace()
+    transEls += [ elements[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
+     #get gens involved
+    transEls += [ elements[Bus][getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
+
+# build elements
+busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.branch_geo[0]
+elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} 
+elements[Branch] = {int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), base.branch_geo[0])}
+
+genBusses = [int(el) for el in base.gen.transpose()[0]]
+elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}    
+elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
 
 
-
-def getGeo(base):
-    def getBranchId(busEnds):
-        #find the branch index of a branch from the busses it connects to.
-        busEnds = Set(busEnds)
-        mIndex = -1
-        for index, branch in enumerate(branchBusEnds):
-            mBranch = Set(branch)
-            intersection = Set.intersection(mBranch, busEnds)
-            if len( intersection) > 1: return index
-        return mIndex
+#convert fault listings into simple lists instead of scipy matlab structures
+def collapse(listing):
+    branch, bus, gen, trans = [list(el[0]) if len(el) == 1 else list(el) for el in [listing.branch, listing.bus, listing.gen, listing.trans]]
     
-    nBranches = len(base.branch_geo[0])
-    nBusses = len(base.bus_geo[0])
-    nGens = len(base.gen)
-    nTrans = len(base.trans[0])
-    #get list of positions
-    geo = defaultdict(None);
-    geo[Branch] = {int(id): list([list(point) for point in el]) for id,el in zip(range(1, nBranches+1), base.branch_geo[0])}
-    geo[Bus] = {int(id): list(el) for id,el in zip( base.bus.transpose()[0],base.bus_geo)}
-    genBusses = [int(el) for el in base.gen.transpose()[0]]
-    geo[Gen] = {int(id): geo[Bus][busNo] for  id,busNo in zip(range(1, nGens+1),genBusses)}
     
-    def getTransPos(trans):
-        transPos = []        
-        transPos += [ list(Line(geo[Branch][getBranchId(busEnds)]).getMidpoint()) for busEnds in (trans[0][0] if len(trans[0]) > 0 else [])]
-        transPos += [ geo[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
-        transPos += [ geo[Bus][id] for id in (trans[0][2][0] if len(trans[0][2]) > 0 else [])]#transformers list the branch by which bus they are connected to, the bus itself, and the gen by which bus it is connected to
-        x,y = (np.array(transPos)).transpose()
-        return  [np.average(x), np.average(y)]
+    faultEls = [];
+    for Type, typelist in zip([Branch, Bus, Gen, Transformer], [branch, bus, gen, trans]):
+        faultEls += [elements[Type][id] for id in typelist]
     
-    geo[Transformer] = { id+1: getTransPos(trans) for id, trans in enumerate(base.trans[0])}
-    return geo
-    #give 'Element' class a list of positions that elements could have
+    relisting = defaultdict(list)
+    relisting['label'], relisting['elements'] = str(listing.label[0]), faultEls
+    return relisting
 
-#get geo-points for different elements
-Element.setgeo(getGeo(base))
+CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
+
+# def getGeo(base):
+#     def getBranchId(busEnds):
+#         #find the branch index of a branch from the busses it connects to.
+#         busEnds = Set(busEnds)
+#         mIndex = -1
+#         for index, branch in enumerate(branchBusEnds):
+#             mBranch = Set(branch)
+#             intersection = Set.intersection(mBranch, busEnds)
+#             if len( intersection) > 1: return index
+#         return mIndex
+#     
+#     nBranches = len(base.branch_geo[0])
+#     nBusses = len(base.bus_geo[0])
+#     nGens = len(base.gen)
+#     nTrans = len(base.trans[0])
+#     #get list of positions
+#     geo = defaultdict(None);
+#     geo[Branch] = {int(id): list([list(point) for point in el]) for id,el in zip(range(1, nBranches+1), base.branch_geo[0])}
+#     geo[Bus] = {int(id): list(el) for id,el in zip( base.bus.transpose()[0],base.bus_geo)}
+#     genBusses = [int(el) for el in base.gen.transpose()[0]]
+#     geo[Gen] = {int(id): geo[Bus][busNo] for  id,busNo in zip(range(1, nGens+1),genBusses)}
+#     
+#     def getTransPos(trans):
+#         transPos = []        
+#         transPos += [ list(Line(geo[Branch][getBranchId(busEnds)]).getMidpoint()) for busEnds in (trans[0][0] if len(trans[0]) > 0 else [])]
+# #         transPos += [ geo[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
+#         transPos += [ geo[Bus][id] for id in (trans[0][2][0] if len(trans[0][2]) > 0 else [])]#transformers list the branch by which bus they are connected to, the bus itself, and the gen by which bus it is connected to
+#         x,y = (np.array(transPos)).transpose()
+#         return  [np.average(x), np.average(y)]
+#     
+#     geo[Transformer] = { id+1: getTransPos(trans) for id, trans in enumerate(base.trans[0])}
+#     return geo
+#     #give 'Element' class a list of positions that elements could have
+# 
+# #get geo-points for different elements
+# Element.setgeo(getGeo(base))
 
 def getFaults(FaultType, CPFbranches, CPF_reductions):
     #get faults
@@ -157,15 +203,15 @@ def mBuildTreeMap(mWindow,faultTree,square, level = 3):
 
 
 ## draw a responsive tree diagram
-# app = QtGui.QApplication(sys.argv)
-# 
-# (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
-# 
-# 
-# 
-# mWindow = Window()
+app = QtGui.QApplication(sys.argv)
+
+(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
+
+
+
+mWindow = Window(pos=[300,100,900,900])
 # mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
-#     
+    
     
 ## draw a  tree diagram
 # app = QtGui.QApplication(sys.argv)
