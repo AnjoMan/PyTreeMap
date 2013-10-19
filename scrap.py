@@ -2,15 +2,18 @@ from PySide import QtGui, QtCore
 import math
 import sys
 import weakref
+from numpy import *
 
 
 class Node(QtGui.QGraphicsItem):
     Type = QtGui.QGraphicsItem.UserType+1
     
-    def __init__(self, graphWidget):
+    def __init__(self, graphWidget, line):
         
         super(self.__class__, self).__init__()
+        self.line = line
         
+        print line
         self.graph = weakref.ref(graphWidget)
         
         self.newPos = QtCore.QPointF()
@@ -31,6 +34,16 @@ class Node(QtGui.QGraphicsItem):
         return QtCore.QRectF(-10 - adjust, -10-adjust, 23+adjust, 23+adjust)
     
     def shape(self):
+        (x0,y0), (xn,yn) = p0, pn = self.line
+        
+        dx,dy = xn-x0, yn-y0
+        
+        dV = np.array([dx,dy])
+        mag_dV = linalg.norm(dV)
+        
+        rotation = array( [0,-1],[1,0]])
+        
+        p = [x0,y0] + dot(rotation, dV) * 3/nag_dV 
         path = QtGui.QPainterPath()
         path.addEllipse(-10,-10,20,20)
         return path
@@ -84,7 +97,9 @@ class GraphWidget(QtGui.QGraphicsView):
         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtGui.QGraphicsView.AnchorViewCenter)
         
-        self.centerNode = Node(self)
+#         self.centerNode = Node(self, [[-100,-100],[0,-70], [0,0],[20,80]])
+        self.centerNode = Node(self, [[-100,-100],[0,-70]])
+
         scene.addItem(self.centerNode)
         
         self.centerNode.setPos(0,0)
@@ -96,23 +111,7 @@ class GraphWidget(QtGui.QGraphicsView):
         if not self.timerId:
             self.timerId = self.startTimer(1000/25)
     
-    def wheelEvent(self, event):
-        self.scaleView(math.pow(2.0, -event.delta() / 240.0))
     
-    def drawBackground(self, painter, rect):
-        # Shadow.
-        sceneRect = self.sceneRect()
-        rightShadow = QtCore.QRectF(sceneRect.right(), sceneRect.top() + 5, 5, sceneRect.height())
-        bottomShadow = QtCore.QRectF(sceneRect.left() + 5, sceneRect.bottom(), sceneRect.width(), 5)
-        if rightShadow.intersects(rect) or rightShadow.contains(rect): painter.fillRect(rightShadow, QtCore.Qt.darkGray)
-        if bottomShadow.intersects(rect) or bottomShadow.contains(rect): painter.fillRect(bottomShadow, QtCore.Qt.darkGray)
-    
-    def scaleView(self, scaleFactor):
-        factor = self.matrix().scale(scaleFactor, scaleFactor).mapRect(QtCore.QRectF(0,0,1,1)).width()
-        
-        if not 0.07 <= factor <= 100:
-            return
-        self.scale(scaleFactor, scaleFactor)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
