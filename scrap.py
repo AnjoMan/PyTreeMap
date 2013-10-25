@@ -1,12 +1,14 @@
-from PySide import QtGui, QtCore
+# from PySide import QtGui, QtCore
 import math
 import sys
 import weakref
 from numpy import *
+from PySide.QtGui import *
+from PySide.QtCore import *
 
 
-class Node(QtGui.QGraphicsItem):
-    Type = QtGui.QGraphicsItem.UserType+1
+class Node(QGraphicsItem):
+    Type = QGraphicsItem.UserType+1
     
     def __init__(self, graphWidget, line):
         
@@ -15,10 +17,13 @@ class Node(QtGui.QGraphicsItem):
         
         print line
         self.graph = weakref.ref(graphWidget)
+        self.radius = 10
         
-        self.newPos = QtCore.QPointF()
-        self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
-        self.setFlag(QtGui.QGraphicsItem.ItemSendsGeometryChanges)
+        
+        
+        self.newPos = QPointF()
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setCacheMode(self.DeviceCoordinateCache)
         self.setZValue(-1)
     
@@ -30,75 +35,129 @@ class Node(QtGui.QGraphicsItem):
         self.setPos(self.newPos); return True
         
     def boundingRect(self):
-        adjust = 2.0
-        return QtCore.QRectF(-10 - adjust, -10-adjust, 23+adjust, 23+adjust)
+        adjust = 10.0
+        x,y = array(self.line).transpose()
+        rect = [min(x)-self.radius, min(y)-self.radius, max(x)-min(x)+2*self.radius, max(y)-min(y)+2*self.radius]
+        
+        print rect
+#         return QRectF(-120,-120,100,100)
+        return QRectF(*rect)
     
     def shape(self):
-        (x0,y0), (xn,yn) = p0, pn = self.line
+        path = QPainterPath()
         
-        dx,dy = xn-x0, yn-y0
+        radius =  10
+        rotation = array( [[0,-1],[1,0]])
         
-        dV = np.array([dx,dy])
-        mag_dV = linalg.norm(dV)
+        def linePath(p0,pn, path, radius, rotation):
+            (x0,y0), (xn,yn) = p0, pn = self.line[0], self.line[1]
+            dx,dy = xn-x0, yn-y0
+            
+            dV = array([dx,dy])
+            mag_dV = linalg.norm(dV)
+            
+            v = dot(rotation, dV) * radius / mag_dV
+            startAngle = arctan2(*v) * 180/pi + 90
+            
+            
+#             path = QPainterPath()
+#             path.setFillRule(Qt.WindingFill)
+            
+            path.moveTo(*p0-v)
+            path.lineTo(*p0+v)
+            path.lineTo(*pn+v)
+            path.lineTo(*pn-v)
+            
+            path.arcTo(xn-radius, yn-radius, 2*radius, 2*radius, startAngle + 180, 180)
+            
+            path.moveTo(*pn-v)
+            path.moveTo(*p0-v)
+            path.arcTo(x0-radius, y0-radius, 2*radius, 2*radius, startAngle, 180)
+#             return path
         
-        rotation = array( [0,-1],[1,0]])
+        [linePath(p0,pn,path, radius, rotation) for p0,pn in zip( self.line[0:-1], self.line[1:])]
         
-        p = [x0,y0] + dot(rotation, dV) * 3/nag_dV 
-        path = QtGui.QPainterPath()
-        path.addEllipse(-10,-10,20,20)
+#         print len(paths)
+#         path = paths.pop()
+#         while len(paths) > 0:
+#             path.intersected(paths.pop())
+#         print path
         return path
+        
+        
+        return path
+#         paths = [ lineDraw(p0,pn, radius, rotation) for p0, pn in zip( self.line[0:-1], self.line[1:])]
+        
+#         return paths[0]
+    #         path.addEllipse(x0-radius, y0-radius, 2*radius, 2*radius)
+            
+# #         return path
     
     def paint(self, painter, option, widget):
-        painter.setPen(QtCore.Qt.NoPen)
-        painter.setBrush(QtCore.Qt.darkGray)
-        painter.drawEllipse(-7,-7,20,20)
+        painter.setPen(Qt.darkGray)
+        painter.setBrush(Qt.darkGray)
+        painter.drawPath(self.shape())
         
-        gradient = QtGui.QRadialGradient(-3,-3,10)
+#         print self.line
+#         (x0,y0), (xn,yn) = p0, pn = self.line[0:2]
+#         
+#         dx, dy = xn-x0, yn-y0
+#         rotation = array( [[0,1],[-1,0]])
+#         
+#         dV = array([dx,dy])
+#         mag_dV = linalg.norm(dV)
+#         
+#         radius = 10
+#         
+#         v = dot(rotation, dV) * radius / mag_dV
+#         
+#         p0, pn= array([x0, y0+100]), array([xn, yn+100])
+#         
+#         painter.setBrush(Qt.NoBrush)
+#         startAngle = arctan2(v[0], v[1]) * 180/pi-90; print startAngle
+#         painter.drawLine(QPoint(*p0), QPoint(*pn))
+# #         painter.drawLine(QPoint(*p0), QPoint(*p0+v))
+# #         painter.drawArc(p0[0] - radius, p0[1]-radius, 2*radius, 2*radius, startAngle*16, 180*16)
+# 
+#         painter.drawPoint(* p0+v)
+# #         painter.drawPoint(* p0-v)
+# #         painter.drawPoint(* pn+v)
+# #         painter.drawPoint(* pn-v)
+# #         painter.drawEllipse(* (list(p0-radius) + [2*radius]*2))
+# #         painter.end()
         
-        if option.state & QtGui.QStyle.State_Sunken:
-            gradient.setCenter(3,3)
-            gradient.setFocalPoint(3,3)
-            gradient.setColorAt(1, QtGui.QColor(QtCore.Qt.yellow).lighter(120))
-            gradient.setColorAt(0, QtGui.QColor(QtCore.Qt.darkYellow).lighter(120))
-        else:
-            gradient.setColorAt(0, QtCore.Qt.yellow)
-            gradient.setColorAt(1, QtCore.Qt.darkYellow)
-        
-        painter.setBrush(QtGui.QBrush(gradient))
-        painter.setPen(QtGui.QPen(QtCore.Qt.black,0))
-        painter.drawEllipse(-10,-10,20,20)
     
     def itemChange(self, change, value):
-        if change == QtGui.QGraphicsItem.ItemPositionChange:
+        if change == QGraphicsItem.ItemPositionChange:
             self.graph().itemMoved()
         
-        return QtGui.QGraphicsItem.itemChange(self, change, value)
+        return QGraphicsItem.itemChange(self, change, value)
         
     def mousePressEvent(self, event):
         self.update()
-        QtGui.QGraphicsItem.mousePressEvent(self,event)
+        QGraphicsItem.mousePressEvent(self,event)
     
     def mouseReleaseEvent(self, event):
         self.update()
-        QtGui.QGraphicsItem.mouseReleaseEvent(self, event)
+        QGraphicsItem.mouseReleaseEvent(self, event)
     
-class GraphWidget(QtGui.QGraphicsView):
+class GraphWidget(QGraphicsView):
     def __init__(self):
         super(self.__class__, self).__init__()
         
         self.timerId = 0
         
-        scene = QtGui.QGraphicsScene(self)
-        scene.setItemIndexMethod(QtGui.QGraphicsScene.NoIndex)
+        scene = QGraphicsScene(self)
+        scene.setItemIndexMethod(QGraphicsScene.NoIndex)
         scene.setSceneRect(-200,-200,400,400)
         self.setScene(scene)
-        self.setCacheMode(QtGui.QGraphicsView.CacheBackground)
-        self.setRenderHint(QtGui.QPainter.Antialiasing)
-        self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QtGui.QGraphicsView.AnchorViewCenter)
+        self.setCacheMode(QGraphicsView.CacheBackground)
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
 #         self.centerNode = Node(self, [[-100,-100],[0,-70], [0,0],[20,80]])
-        self.centerNode = Node(self, [[-100,-100],[0,-70]])
+        self.centerNode = Node(self, [[-100,-100],[0,-70], [100, -100]])
 
         scene.addItem(self.centerNode)
         
@@ -114,8 +173,8 @@ class GraphWidget(QtGui.QGraphicsView):
     
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-    QtCore.qsrand(QtCore.QTime(0,0,0).secsTo(QtCore.QTime.currentTime()))
+    app = QApplication(sys.argv)
+    qsrand(QTime(0,0,0).secsTo(QTime.currentTime()))
     
     widget = GraphWidget()
     widget.show()
