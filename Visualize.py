@@ -75,14 +75,22 @@ def getTransEls(trans):
     transEls += [ elements[Bus][getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
     return transEls
 
+def negateY(element):
+    element = transpose(array(element))
+    element = transpose([list(element[0]), list(element[1]*-1)])
+    element = [list(point) for point in element]
+    return element
+
 # build elements
-busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo[0]
+busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
 elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} 
-elements[Branch] = {int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), base.branch_geo[0])}
+# import pdb; pdb.set_trace()
+
+branchPos = [negateY(element) for element in base.branch_geo[0]]
+elements[Branch] = {int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
 
 genBusses = [int(el) for el in base.gen.transpose()[0]]
 
-import pdb; pdb.set_trace()
 elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
 elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
 elList = []
@@ -179,14 +187,23 @@ app = QtGui.QApplication(sys.argv)
 
 
 # get bounds for elList
-rects = [el.boundingRect().getRect() for el in elList]
-x0,y0,xn,yn = transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+rects = [list(el.boundingRect().getRect()) for el in elList]
+x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
 bound = [min(x0), min(y0), max(xn), max(yn)]
 
-[element.fitIn([0,0,880,880], bound) for element in elList]
+# [element.fitIn([0,0,880,880], bound) for element in elList]
+
 
 mOneline = OneLine([100,100,900,900])
-mOneline.addElement(elList[1])
+
+[mOneline.addElement(el) for el in elements[Bus].values()]
+[mOneline.addElement(el) for el in elements[Branch].values()]
+# mOneline.addElement(elements[Branch][2])
+sys.exit(app.exec_())
+
+
+
+
 
 
 # mWindow = Window(pos=[300,100,900,900])

@@ -1,42 +1,19 @@
-from PySide.QtGui import *
-from PySide.QtCore import *
-import sys
+from numpy import *
 
 
-class Example(QWidget):
+
+
+mArray =[ [ [1,-1], [2,-2], [3,-3]], [ [1,-1], [2,-2], [3,-3]]]
+
+
+def negateY(element):
+    element = transpose(array(element))
+    element = transpose([list(element[0]), list(element[1]*-1)])
+    element = [list(point) for point in element]
+    return element
     
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        
-        
-        
-        self.setGeometry(300,300,300,300)
-        self.show()
-        
-        
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        
-        
-        
-        
-        painter.drawEllipse(30,30,50,50)
-        
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        painter.drawEllipse(QRect(100,50,50,50))
-        
-        painter.drawEllipse(QRectF(30.0,100.0,50.0,50.0))
-        
-        painter.end()
+ 
 
 
-app = QApplication(sys.argv)
+nArray = [negateY(el) for el in mArray]
 
-
-
-ex = Example()
-
-
-
-sys.exit(app.exec_())

@@ -1,4 +1,4 @@
-import numpy as np
+from numpy import *
 from matplotlib import pyplot as plt
 from collections import defaultdict
 import weakref
@@ -19,15 +19,17 @@ class OneLine(QGraphicsView):
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AncherViewCenter)
+        self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
         self.elements = [Element]
+        
+        self.show()
     
     def addElement(self, element):
         self.elements += [element]
         self.scene().addItem(element)
-        item.setGraph(self)
-        item.show()
+        element.setGraph(self)
+        element.show()
         
     
 class Element(QGraphicsItem,object ):
@@ -71,7 +73,7 @@ class Element(QGraphicsItem,object ):
     
     def boundingRect(self):
         try:
-            return QRectF(* list(np.array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+            return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
         except:
             import pdb; pdb.set_trace()
             print '1'
@@ -79,7 +81,7 @@ class Element(QGraphicsItem,object ):
     def fitIn(self, newBox, oldBox):
         #the default fitIn behaviour is to scale whatever comes from self.getPos()
         point = self.getPos()
-        self.scalePoint(point, box, oldBox)
+        self.scalePoint(point, newBox, oldBox)
         
     def scalePoint(self, point, newBox, oldBox):
         #scale point in 'oldBox' to fit in box (x0,y0,xn,yn)
@@ -102,9 +104,10 @@ class Element(QGraphicsItem,object ):
     def shape(self):
         path = QPainterPath()
         
+        pos = self.getPos()
         radius = self.__class__.weight
-        path.moveTo(QPointF(*self.pos))
-        path.addEllipse( QRectF(self.pos[0]-radius, self.pos[1]-radius, 2*radius, 2*radius))
+        path.moveTo(QPointF(*pos))
+        path.addEllipse( QRectF(pos[0]-radius, pos[1]-radius, 2*radius, 2*radius))
         return path
     
     def paint(self, painter, option, widget):
@@ -120,7 +123,7 @@ class Element(QGraphicsItem,object ):
 
 class Branch(Element):
     color = '#DB0058'
-    
+    radius = 1
     def __init__(self,id,line):
         self.line = line
         super(self.__class__, self).__init__(id, [None,None])
@@ -129,15 +132,56 @@ class Branch(Element):
         return Line(self.pos).getPosition()
     
     def boundingRect(self):
-        x,y = np.array(self.line).transpose()
+        x,y = array(self.line).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
     
     def fitIn(self, newBox, oldBox):
         points = self.line
         self.line = [self.scalePoint(point, newBox, oldBox) for point in points]
+    
+    
+    def shape(self):
+        path = QPainterPath()
+        path.setFillRule(Qt.WindingFill)
+        
+        radius =  Branch.radius
+        rotation = array( [[0,-1],[1,0]])
+        
+        points = zip(self.line[0:-1], self.line[1:])
+        
+        for p0, pn in points:
+            (x0,y0),(xn,yn) = p0,pn
+            dx,dy = array(pn) - array(p0)
+            
+            dV = array([dx,dy])
+            mag_dV = linalg.norm(dV)
+            
+            v = dot(rotation, dV) * radius / mag_dV
+            startAngle = arctan2(*v) * 180/pi + 90
+            
+            path.moveTo(QPointF(*p0-v))
+            
+            #starting arc
+            path.arcTo(QRectF(x0-radius, y0-radius, 2*radius, 2*radius), startAngle, 180)
+            #rectangular part
+            path.lineTo(QPointF(*p0+v))
+            path.lineTo(QPointF(*pn+v))
+            path.lineTo(QPointF(*pn-v))
+
+        path.arcTo(QRectF(xn-radius, yn-radius, 2*radius, 2*radius), startAngle + 180, 180)
+        
+        return path.simplified()
         
 class Bus(Element): 
     color = '#408Ad2'
+    
+    w,h = 70,5
+    def shape(self):
+        x,y = self.getPos()
+        path = QPainterPath()
+        path.moveTo(x,y)
+        path.addRect(QRectF(x-Bus.w/2, y-Bus.h/2, Bus.w, Bus.h))
+        return path
 
 class Gen(Element):
     color = '#FF9700'
@@ -162,7 +206,8 @@ class Transformer(Element):
         return mean(a,0)
     
     def boundingRect(self):
-        rects = [el.boundingRect() for el in self.elements]
+        rects = [list(el.boundingRect().getRect()) for el in self.elements]
+        
         x0,y0,xn,yn = transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
         return QRectF( min(x0), min(y0), max(xn), max(yn))
     
@@ -226,7 +271,7 @@ class Line:
     def getLength(self):
         sum = 0;
         for index in range(0,len(self.nodesX)-1):
-            sum += np.sqrt(  (self.nodesX[index+1]-self.nodesX[index])**2 + (self.nodesY[index+1]-self.nodesY[index])**2)
+            sum += sqrt(  (self.nodesX[index+1]-self.nodesX[index])**2 + (self.nodesY[index+1]-self.nodesY[index])**2)
         return sum
     
     def getMidpoint(self):
@@ -238,15 +283,15 @@ class Line:
             dxs,dys = deltaDistances(self.nodesX), deltaDistances(self.nodesY)
             
             
-            distances = [0] + [ np.sqrt(dx**2 + dy**2) for dx,dy in zip(dxs, dys)]  
+            distances = [0] + [ sqrt(dx**2 + dy**2) for dx,dy in zip(dxs, dys)]  
             
-            length = np.sum(distances);
+            length = sum(distances);
             
-            cumDistances = np.cumsum(distances)
+            cumDistances = cumsum(distances)
             
             #max index of distances s.t. cumsum <= half total length
             ltHalves = [index for index,value in enumerate(cumDistances) if value <= length/2]
-            lt_half = np.max(ltHalves)
+            lt_half = max(ltHalves)
             
             percentAlong = (length/2 - cumDistances[lt_half])/ distances[lt_half+1]
             
@@ -281,10 +326,10 @@ def flatten(l, ltypes=(list, tuple)):
 
 def main():
     
-    X = [1,2,2+1/np.sqrt(2)]
-    Y = [4,5,5+1/np.sqrt(2)]
+    X = [1,2,2+1/sqrt(2)]
+    Y = [4,5,5+1/sqrt(2)]
     
-    a = Line(np.array([ X,Y]))
+    a = Line(array([ X,Y]))
     
     x,y = a.getPosition()
     
