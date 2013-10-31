@@ -7,6 +7,7 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 
 
+
 class Node(QGraphicsItem):
     Type = QGraphicsItem.UserType+1
     
@@ -15,11 +16,10 @@ class Node(QGraphicsItem):
         super(self.__class__, self).__init__()
         self.line = line
         
-        print line
-        self.graph = weakref.ref(graphWidget)
-        self.radius = 1
-        
-        
+        #width of the line
+        self.radius = 8
+        if graphWidget != None:
+            self.graph = weakref.ref(graphWidget)
         
         self.newPos = QPointF()
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -27,20 +27,13 @@ class Node(QGraphicsItem):
         self.setCacheMode(self.DeviceCoordinateCache)
         self.setZValue(-1)
     
-    def type(self): return Node.Type
     
-    def advance(self): 
-        if self.newPos == self.pos(): return false
-        
-        self.setPos(self.newPos); return True
-        
+   
     def boundingRect(self):
         adjust = 10.0
         x,y = array(self.line).transpose()
         rect = [min(x)-self.radius, min(y)-self.radius, max(x)-min(x)+2*self.radius, max(y)-min(y)+2*self.radius]
         
-        print rect
-#         return QRectF(-120,-120,100,100)
         return QRectF(*rect)
     
     def shape(self):
@@ -52,11 +45,9 @@ class Node(QGraphicsItem):
         
         points = zip(self.line[0:-1], self.line[1:])
         
-        print points[0], points[1]
         for p0, pn in points:
-            print "FUUUUUCK", p0, "YOOO",pn
-            (x0,y0), (xn,yn) = p0, pn # = self.line[0], self.line[1]
-            dx,dy = xn-x0, yn-y0
+            (x0,y0),(xn,yn) = p0,pn
+            dx,dy = array(pn) - array(p0)
             
             dV = array([dx,dy])
             mag_dV = linalg.norm(dV)
@@ -64,18 +55,18 @@ class Node(QGraphicsItem):
             v = dot(rotation, dV) * radius / mag_dV
             startAngle = arctan2(*v) * 180/pi + 90
             
-            
-            
             path.moveTo(QPointF(*p0-v))
             
+            #starting arc
             path.arcTo(QRectF(x0-radius, y0-radius, 2*radius, 2*radius), startAngle, 180)
+            #rectangular part
             path.lineTo(QPointF(*p0+v))
             path.lineTo(QPointF(*pn+v))
             path.lineTo(QPointF(*pn-v))
 
         path.arcTo(QRectF(xn-radius, yn-radius, 2*radius, 2*radius), startAngle + 180, 180)
         
-        return path
+        return path.simplified()
 
     
     def paint(self, painter, option, widget):
@@ -98,6 +89,9 @@ class Node(QGraphicsItem):
         self.update()
         QGraphicsItem.mouseReleaseEvent(self, event)
     
+    def setGraph(self, graph):
+        self.graph = weakref.ref(graph)
+        
 class GraphWidget(QGraphicsView):
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -106,7 +100,7 @@ class GraphWidget(QGraphicsView):
         
         scene = QGraphicsScene(self)
         scene.setItemIndexMethod(QGraphicsScene.NoIndex)
-        scene.setSceneRect(-200,-200,400,400)
+        scene.setSceneRect(0,0,880,880)
         self.setScene(scene)
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing)
@@ -114,18 +108,24 @@ class GraphWidget(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
 #         self.centerNode = Node(self, [[-100,-100],[0,-70], [0,0],[20,80]])
-        self.centerNode = Node(self, [[-100,-100],[0,-70], [100, -100], [100,200]])
-        self.secondNode = Node(self, [[-100,200], [-130,210], [100,200] ])
+        self.centerNode = Node(self, [[0,0],[400,220], [500, 100], [700,700]])
         scene.addItem(self.centerNode)
-        scene.addItem(self.secondNode)
+#         scene.addItem(self.secondNode)
         
         
         self.centerNode.setPos(0,0)
-        self.secondNode.setPos(0,0)
-        self.scale(0.8,0.8)
-        self.setMinimumSize(400,400)
+#         self.secondNode.setPos(0,0)
+        self.setGeometry(100,100,900,900)
         self.setWindowTitle(self.tr("Elastic Nodes"))
+        
     
+    
+    def addItem(self, item):
+        self.item = item
+        self.scene().addItem(item)
+        item.setGraph(self)
+        item.show()
+        
     def itemMoved(self):
         if not self.timerId:
             self.timerId = self.startTimer(1000/25)
@@ -138,5 +138,7 @@ if __name__ == "__main__":
     
     widget = GraphWidget()
     widget.show()
+    
+    widget.addItem(Node(None,[[200, 200],[400,400],[400,800]]))
     
     sys.exit(app.exec_())

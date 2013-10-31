@@ -1,15 +1,53 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from collections import defaultdict
+import weakref
+from PySide.QtGui import *
+from PySide.QtCore import *
 
-class Element(object):
+
+
+class OneLine(QGraphicsView):
+    def __init__(self, shape):
+        super(self.__class__,self).__init__()
+        
+        
+        self.setGeometry(*shape)
+        scene = QGraphicsScene(self)
+        scene.setSceneRect(10,10,shape[2]-20, shape[3]-20)
+        self.setScene(scene)
+        self.setCacheMode(QGraphicsView.CacheBackground)
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AncherViewCenter)
+        
+        self.elements = [Element]
+    
+    def addElement(self, element):
+        self.elements += [element]
+        self.scene().addItem(element)
+        item.setGraph(self)
+        item.show()
+        
+    
+class Element(QGraphicsItem,object ):
     color = '#F0F0F0'
+    weight = 10
     geo = defaultdict(None)
     
-    def __init__(self, id, pos):
+    def __init__(self,id, pos):
+        super(Element, self).__init__()
         self.id=id
         self.pos = pos
-#         self.value = value if value != None else np.random.rand()
+        
+        #
+#         if oneline != None:
+#             self.graph = weakref.ref(oneline)
+        
+        self.newPos = QPointF()
+        self.setCacheMode(self.DeviceCoordinateCache)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setZValue(-1)
     
     
     def __repr__(self):
@@ -31,25 +69,80 @@ class Element(object):
         geo = self.getGeo()
         return geo
     
-    @staticmethod
-    def setgeo(geo):
-        Element.geo = geo
+    def boundingRect(self):
+        try:
+            return QRectF(* list(np.array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+        except:
+            import pdb; pdb.set_trace()
+            print '1'
+    
+    def fitIn(self, newBox, oldBox):
+        #the default fitIn behaviour is to scale whatever comes from self.getPos()
+        point = self.getPos()
+        self.scalePoint(point, box, oldBox)
+        
+    def scalePoint(self, point, newBox, oldBox):
+        #scale point in 'oldBox' to fit in box (x0,y0,xn,yn)
+        x0,y0,xn,yn = newBox
+        width,height = xn-x0,yn-y0
+        
+        
+        widthL = oldBox[2]-oldBox[0]
+        heightL = oldBox[3]-oldBox[1]
+        xL,yL = oldBox[0],oldBox[1]
+        def scale(x,y):
+            x = x0 + width *  (x-xL)/widthL
+            y = y0 + height * (y-yL)/heightL
+            return [x,y]
+        
+        return scale(*point)
+
+    
+    #
+    def shape(self):
+        path = QPainterPath()
+        
+        radius = self.__class__.weight
+        path.moveTo(QPointF(*self.pos))
+        path.addEllipse( QRectF(self.pos[0]-radius, self.pos[1]-radius, 2*radius, 2*radius))
+        return path
+    
+    def paint(self, painter, option, widget):
+        painter.setPen(Qt.darkGray)
+        painter.setBrush(Qt.darkGray)
+        painter.drawPath(self.shape())
+    
+    def mousePressEvent(self, event):
+        print str(self)
+        
+    def setGraph(self,graph):
+        self.graph = weakref.ref(graph)
 
 class Branch(Element):
     color = '#DB0058'
+    
+    def __init__(self,id,line):
+        self.line = line
+        super(self.__class__, self).__init__(id, [None,None])
+        
     def secondary(self):
         return Line(self.pos).getPosition()
+    
+    def boundingRect(self):
+        x,y = np.array(self.line).transpose()
+        return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
+    
+    def fitIn(self, newBox, oldBox):
+        points = self.line
+        self.line = [self.scalePoint(point, newBox, oldBox) for point in points]
         
 class Bus(Element): 
     color = '#408Ad2'
-    def __init__(self, id, pos):
-        self.id = id
-        self.pos = pos
 
 class Gen(Element):
     color = '#FF9700'
     def __init__(self, id, bus):
-        self.id = id
+        super(self.__class__, self).__init__(id, [None,None])
         self.bus = bus
     
     def getPos(self):
@@ -58,13 +151,23 @@ class Gen(Element):
 class Transformer(Element):
     color = '#80E800'
     
-    def __init__(self, id, elements):
+    def __init__(self, *args):
         self.id = id
-        self.elements = elements
+        self.elements = args[1]
+        args = (args[0], [None, None])
+        super(self.__class__, self).__init__(*args)
     
     def getPos(self):
+        pos = [el.getPos() for el in self.elements]
+        return mean(a,0)
+    
+    def boundingRect(self):
+        rects = [el.boundingRect() for el in self.elements]
+        x0,y0,xn,yn = transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+        return QRectF( min(x0), min(y0), max(xn), max(yn))
+    
+    def fitIn(self, *args):
         pass
-        
     
 class Fault(object):
     
@@ -75,12 +178,6 @@ class Fault(object):
         if 'label' in listing: del listing['label']
         
         self.elements = listing['elements']
-
-        
-#         self.elements = []
-#         for elType in listing.keys():
-#             self.elements += [elType(id = item) for item in listing[elType]]
-#         
         self.connections = []
         
     

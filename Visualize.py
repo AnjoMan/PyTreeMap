@@ -73,16 +73,21 @@ def getTransEls(trans):
     transEls += [ elements[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
      #get gens involved
     transEls += [ elements[Bus][getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
+    return transEls
 
 # build elements
-busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.branch_geo[0]
+busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo[0]
 elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} 
 elements[Branch] = {int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), base.branch_geo[0])}
 
 genBusses = [int(el) for el in base.gen.transpose()[0]]
-elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}    
-elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
 
+import pdb; pdb.set_trace()
+elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
+elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
+elList = []
+for dict in elements.values():
+    elList += dict.values()
 
 #convert fault listings into simple lists instead of scipy matlab structures
 def collapse(listing):
@@ -99,42 +104,7 @@ def collapse(listing):
 
 CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
 
-# def getGeo(base):
-#     def getBranchId(busEnds):
-#         #find the branch index of a branch from the busses it connects to.
-#         busEnds = Set(busEnds)
-#         mIndex = -1
-#         for index, branch in enumerate(branchBusEnds):
-#             mBranch = Set(branch)
-#             intersection = Set.intersection(mBranch, busEnds)
-#             if len( intersection) > 1: return index
-#         return mIndex
-#     
-#     nBranches = len(base.branch_geo[0])
-#     nBusses = len(base.bus_geo[0])
-#     nGens = len(base.gen)
-#     nTrans = len(base.trans[0])
-#     #get list of positions
-#     geo = defaultdict(None);
-#     geo[Branch] = {int(id): list([list(point) for point in el]) for id,el in zip(range(1, nBranches+1), base.branch_geo[0])}
-#     geo[Bus] = {int(id): list(el) for id,el in zip( base.bus.transpose()[0],base.bus_geo)}
-#     genBusses = [int(el) for el in base.gen.transpose()[0]]
-#     geo[Gen] = {int(id): geo[Bus][busNo] for  id,busNo in zip(range(1, nGens+1),genBusses)}
-#     
-#     def getTransPos(trans):
-#         transPos = []        
-#         transPos += [ list(Line(geo[Branch][getBranchId(busEnds)]).getMidpoint()) for busEnds in (trans[0][0] if len(trans[0]) > 0 else [])]
-# #         transPos += [ geo[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
-#         transPos += [ geo[Bus][id] for id in (trans[0][2][0] if len(trans[0][2]) > 0 else [])]#transformers list the branch by which bus they are connected to, the bus itself, and the gen by which bus it is connected to
-#         x,y = (np.array(transPos)).transpose()
-#         return  [np.average(x), np.average(y)]
-#     
-#     geo[Transformer] = { id+1: getTransPos(trans) for id, trans in enumerate(base.trans[0])}
-#     return geo
-#     #give 'Element' class a list of positions that elements could have
-# 
-# #get geo-points for different elements
-# Element.setgeo(getGeo(base))
+
 
 def getFaults(FaultType, CPFbranches, CPF_reductions):
     #get faults
@@ -152,7 +122,7 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     from sets import Set
     
     #identify connections
-    connections = defaultdict(dict)
+    connections = defaultdict(list)
     keys = sorted(faultTree.keys())
     for level, nextLevel in zip( keys[0:-1], keys[1:]):
         for fault in faultTree[level]:
@@ -208,8 +178,18 @@ app = QtGui.QApplication(sys.argv)
 (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
 
 
+# get bounds for elList
+rects = [el.boundingRect().getRect() for el in elList]
+x0,y0,xn,yn = transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+bound = [min(x0), min(y0), max(xn), max(yn)]
 
-mWindow = Window(pos=[300,100,900,900])
+[element.fitIn([0,0,880,880], bound) for element in elList]
+
+mOneline = OneLine([100,100,900,900])
+mOneline.addElement(elList[1])
+
+
+# mWindow = Window(pos=[300,100,900,900])
 # mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
     
     
