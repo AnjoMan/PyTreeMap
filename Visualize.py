@@ -148,36 +148,27 @@ width, height=  1700,800
 
 
 
-def subTreeValue(fault):
-    total=fault.value() + sum([subTreeValue(subFault) for subFault in fault.connections])
-    return total
 
-def mBuildTreeMap(mWindow,faultTree,square, level = 3):
-    
-    def recursive_build(faultList, square, level):
 
-        x0,y0,xn,yn = square
-        square = [x0+1,y0+1,xn-1,yn-1]
-        if len(faultList) == 0:
-            return None
-        
-        #lay out faults
-        rectangles = layout([subTreeValue(fault) for fault in faultList], square)
-#         import pdb; pdb.set_trace()
-        if len(faultList[0].elements) >= level:
-            #lay out faults and add a rectangle widget to each fault
-            for fault,rectangle in zip(faultList,rectangles):
-                xa,ya,xb,yb = rectangle
-                fault.addRectangle(mWindow,[xa,ya, xb-xa, yb-ya])
-#                 mWindow.addWidget(fault)
-        else:
-            for fault, rectangle in zip(faultList, rectangles):
-                randomColor(len(fault.elements))
-                recursive_build(fault.connections, rectangle, level)
-    
-    recursive_build(faultTree[1], square, level)
+
  
 
+
+class Visualization(QWidget):
+    
+    def __init__(self, treemap = None, oneline = None):
+        super(self.__class__, self).__init__()
+        
+        
+        hbox = QHBoxLayout()
+        hbox.addWidget(treemap)
+        hbox.addWidget(oneline)
+        
+        treemap.show()
+        self.setLayout(hbox)
+        self.setGeometry(100,100,1800,1000)
+        self.setWindowTitle('Visualize')
+        self.show()
 
 
 ## draw a responsive tree diagram
@@ -187,7 +178,7 @@ app = QtGui.QApplication(sys.argv)
 
 
 # get bounds for elList
-rects = [list(el.boundingRect().getRect()) for el in elList]
+rects = [list(el.boundingRect().getRect()) for el in elements[Bus].values() + elements[Branch].values()]
 x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
 bound = [min(x0), min(y0), max(xn), max(yn)]
 
@@ -195,19 +186,18 @@ bound = [min(x0), min(y0), max(xn), max(yn)]
 
 
 mOneline = OneLine([100,100,900,900])
-
 [mOneline.addElement(el) for el in elements[Bus].values()]
 [mOneline.addElement(el) for el in elements[Branch].values()]
-# mOneline.addElement(elements[Branch][2])
+
+
+
+mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
+
+mVis = Visualization( oneline = mOneline, treemap=mTreemap)
+
+
 sys.exit(app.exec_())
 
-
-
-
-
-
-# mWindow = Window(pos=[300,100,900,900])
-# mBuildTreeMap(mWindow,faultTree,[10,10,890,890])
     
     
 ## draw a  tree diagram

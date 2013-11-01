@@ -11,8 +11,12 @@ class OneLine(QGraphicsView):
     def __init__(self, shape):
         super(self.__class__,self).__init__()
         
+        x,y,w,h = shape
         
-        self.setGeometry(*shape)
+#         self.move(x,y)
+        self.resize(w,h)
+        
+#         self.setGeometry(*shape)
         scene = QGraphicsScene(self)
         scene.setSceneRect(10,10,shape[2]-20, shape[3]-20)
         self.setScene(scene)
@@ -23,7 +27,7 @@ class OneLine(QGraphicsView):
         
         self.elements = [Element]
         
-        self.show()
+#         self.show()
     
     def addElement(self, element):
         self.elements += [element]
@@ -81,7 +85,8 @@ class Element(QGraphicsItem,object ):
     def fitIn(self, newBox, oldBox):
         #the default fitIn behaviour is to scale whatever comes from self.getPos()
         point = self.getPos()
-        self.scalePoint(point, newBox, oldBox)
+        point = self.scalePoint(point, newBox, oldBox)
+        self.pos = point
         
     def scalePoint(self, point, newBox, oldBox):
         #scale point in 'oldBox' to fit in box (x0,y0,xn,yn)
