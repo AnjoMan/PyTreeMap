@@ -45,7 +45,7 @@ class TreemapVis(QWidget):
         self.widgets = []
         self.setMouseTracking(True)
         
-        self.setWindowTitle('Window')
+        self.setWindowTitle('Treemap')
         self.show()
         
         self.elements = []

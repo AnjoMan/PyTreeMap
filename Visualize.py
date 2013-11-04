@@ -154,21 +154,47 @@ width, height=  1700,800
  
 
 
-class Visualization(QWidget):
+class Visualization(QMainWindow):
     
     def __init__(self, treemap = None, oneline = None):
         super(self.__class__, self).__init__()
         
         
-        hbox = QHBoxLayout()
-        hbox.addWidget(treemap)
-        hbox.addWidget(oneline)
+        self.widget = QWidget()
         
-        treemap.show()
-        self.setLayout(hbox)
+        self.oneline = oneline
+        self.treemap = treemap
+        
+        self.treemap.setParent(self.widget)
+        self.oneline.setParent(self.widget)
+#         
+#         hbox = QHBoxLayout()
+#         hbox.addWidget(self.treemap)
+#         hbox.addWidget(self.oneline)
+#         self.widget.setLayout(hbox)
+
+        self.treemap.setGeometry(0,0,900,900)
+        self.oneline.setGeometry(900,0,900,900)
+        self.setCentralWidget(self.widget)
+#         self.setLayout(hbox)
         self.setGeometry(100,100,1800,1000)
         self.setWindowTitle('Visualize')
+        
+#         self.treemap.show()
+#         self.oneline.show()
         self.show()
+    
+    
+    def createView(self, scene):
+        
+        view = QGraphicsView(scene)
+        
+        view.setCacheMode(QGraphicsView.CacheBackground)
+        view.setRenderHint(QPainter.Antialiasing)
+        view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+#         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
+    
+        return view
 
 
 ## draw a responsive tree diagram
@@ -185,12 +211,12 @@ bound = [min(x0), min(y0), max(xn), max(yn)]
 # [element.fitIn([0,0,880,880], bound) for element in elList]
 
 
-mOneline = OneLine([100,100,900,900])
+mOneline = OneLineWidget([0,0,900,900])
 [mOneline.addElement(el) for el in elements[Bus].values()]
 [mOneline.addElement(el) for el in elements[Branch].values()]
 
 
-
+mTreemap = None
 mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
 
 mVis = Visualization( oneline = mOneline, treemap=mTreemap)

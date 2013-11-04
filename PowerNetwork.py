@@ -4,8 +4,57 @@ from collections import defaultdict
 import weakref
 from PySide.QtGui import *
 from PySide.QtCore import *
+import sys
 
 
+class OneLineWidget(QWidget):
+    
+    def __init__(self, shape):
+        
+    
+        super(self.__class__,self).__init__()
+        x,y,w,h = shape
+        
+        self.move(x,y)
+        self.resize(w,h)
+        self.scene = QGraphicsScene(self)
+        self.scene.setSceneRect(*shape)
+        
+        
+        self.view = QGraphicsView(self.scene)
+        
+        self.view.setGeometry(300,300,900,900)
+        
+        self.view.setCacheMode(QGraphicsView.CacheBackground)
+        self.view.setRenderHint(QPainter.Antialiasing)
+        self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        
+        layout = QHBoxLayout()
+        layout.addWidget(self.view)
+        self.setLayout(layout)
+        self.elements = []
+        
+        self.show()
+    
+    def addElement(self, element):
+        self.elements += [element]
+        self.scene.addItem(element)
+        element.show()
+
+class OneLineScene(QGraphicsScene):
+    def __init__(self, shape):
+        super(self.__class__,self).__init__()
+        
+        
+
+        
+        self.elements = []
+    
+    def addElement(self, element):
+        self.elements += [element]
+        self.addItem(element)
+        element.setGraph(self)
+        element.show()
 
 class OneLine(QGraphicsView):
     def __init__(self, shape):
@@ -13,7 +62,7 @@ class OneLine(QGraphicsView):
         
         x,y,w,h = shape
         
-#         self.move(x,y)
+        self.move(x,y)
         self.resize(w,h)
         
 #         self.setGeometry(*shape)
@@ -23,9 +72,11 @@ class OneLine(QGraphicsView):
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
+#         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
         self.elements = [Element]
+        
+        print self.geometry()
         
 #         self.show()
     
@@ -331,18 +382,11 @@ def flatten(l, ltypes=(list, tuple)):
 
 def main():
     
-    X = [1,2,2+1/sqrt(2)]
-    Y = [4,5,5+1/sqrt(2)]
+    app = QApplication(sys.argv)
     
-    a = Line(array([ X,Y]))
-    
-    x,y = a.getPosition()
-    
-    
-    plt.scatter(X,Y);
-    
-    plt.scatter(x,y,c="#00FF00")
-    plt.show()
+    ex = OneLineWidget([0,0,900,900])
+    ex.addElement(Element(1,[100,100]))
+    sys.exit(app.exec_())
 
 
     
