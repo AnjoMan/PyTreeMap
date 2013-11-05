@@ -18,12 +18,12 @@ def randomColor(level=1):
     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
 
     if level == 1:
-        print randomColor.mods
+#         print randomColor.mods
         randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
     elif level > 1:
         randomColor.mods = randomColor.mods[0:level-1] + [random.rand()*4.0/10 * 1/level]
 #         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
-    print randomColor.mods
+#     print randomColor.mods
     return QColor(rgb(sum(randomColor.mods)%1,0.3,0.7))     
 
         
@@ -72,7 +72,7 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print 'Resized!'
         
-    def build(self,faultTree,square, level = 3):
+    def build(self,faultTree,square, level = 2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         def subTreeValue(fault):
@@ -108,30 +108,37 @@ class TreeMapFault(Fault):
         self.visuals = []
     
     def addRectangle(self, mWindow, pos):
-        newRectangle = Rectangle(pos, mWindow)
+        newRectangle = Rectangle(pos, parent=mWindow, fault=self)
         newRectangle.setColor(len(self.elements))
-        newRectangle.setFault(self)
+#         newRectangle.setFault(self)
         newRectangle.show()
         return newRectangle
         
     
 class Rectangle(QWidget):
     
-    def __init__(self, pos, parent=None):
+    def __init__(self, pos, parent=None, fault=None):
         
         super(self.__class__,self).__init__(parent)
         if parent != None: self.show()
+        self.fault = fault
+#         print self.fault
         self.setGeometry(*pos)
-        self.fault = None
         self.color = QColor(200,100,100)
+        
+#         for element in self.fault.elements:
+#             self.enterEvent.connect(element.toggleHighlight)
+#             self.leaveEvent.connect(element.toggleHighlight)
     
     def setColor(self,level):
         self.color=randomColor(level)
     def enterEvent(self, e):
-        print self.fault
+        for element in self.fault.elements:
+            element.toggleHighlight()
     
     def leaveEvent(self, e):
-        pass
+        for element in self.fault.elements:
+            element.toggleHighlight()
 
     def paintEvent(self, e):
         

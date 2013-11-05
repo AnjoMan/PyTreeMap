@@ -76,7 +76,6 @@ class OneLine(QGraphicsView):
         
         self.elements = [Element]
         
-        print self.geometry()
         
 #         self.show()
     
@@ -91,7 +90,7 @@ class Element(QGraphicsItem,object ):
     color = '#F0F0F0'
     weight = 10
     geo = defaultdict(None)
-    
+    hColor= {False: Qt.darkGray, True: Qt.darkRed}
     def __init__(self,id, pos):
         super(Element, self).__init__()
         self.id=id
@@ -105,6 +104,7 @@ class Element(QGraphicsItem,object ):
         self.setCacheMode(self.DeviceCoordinateCache)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setZValue(-1)
+        self.highlight = False
     
     
     def __repr__(self):
@@ -127,11 +127,8 @@ class Element(QGraphicsItem,object ):
         return geo
     
     def boundingRect(self):
-        try:
-            return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
-        except:
-            import pdb; pdb.set_trace()
-            print '1'
+        return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+
     
     def fitIn(self, newBox, oldBox):
         #the default fitIn behaviour is to scale whatever comes from self.getPos()
@@ -167,12 +164,20 @@ class Element(QGraphicsItem,object ):
         return path
     
     def paint(self, painter, option, widget):
-        painter.setPen(Qt.darkGray)
-        painter.setBrush(Qt.darkGray)
+        mColor = Element.hColor[self.highlight]
+        painter.setPen(mColor)
+        painter.setBrush(mColor)
         painter.drawPath(self.shape())
     
     def mousePressEvent(self, event):
+        self.highlight = not self.highlight
+        print self.highlight
         print str(self)
+        self.update(self.boundingRect())
+    
+    def toggleHighlight(self):
+        self.highlight = not self.highlight
+        self.update(self.boundingRect())
         
     def setGraph(self,graph):
         self.graph = weakref.ref(graph)
@@ -218,13 +223,16 @@ class Branch(Element):
             path.moveTo(QPointF(*p0-v))
             
             #starting arc
-            path.arcTo(QRectF(x0-radius, y0-radius, 2*radius, 2*radius), startAngle, 180)
+            path.addEllipse(x0-radius, y0-radius,2*radius,2*radius)
             #rectangular part
-            path.lineTo(QPointF(*p0+v))
-            path.lineTo(QPointF(*pn+v))
+            
+            path.lineTo(QPointF(*p0-v))
             path.lineTo(QPointF(*pn-v))
-
-        path.arcTo(QRectF(xn-radius, yn-radius, 2*radius, 2*radius), startAngle + 180, 180)
+            path.lineTo(QPointF(*pn+v))
+            path.lineTo(QPointF(*p0+v))
+        
+        path.moveTo(QPointF(*pn+v))
+        path.addEllipse(QRectF(xn-radius, yn-radius, 2*radius, 2*radius))
         
         return path.simplified()
         

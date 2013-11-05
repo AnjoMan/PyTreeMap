@@ -124,8 +124,8 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     for fault in faults:
         faultTree[len(fault.getElements())] += [fault]
     
-    print faultTree[0]
-    del faultTree[0]
+    if 0 in faultTree:
+        del faultTree[0]
     
     from sets import Set
     
@@ -172,12 +172,12 @@ class Visualization(QMainWindow):
 #         hbox.addWidget(self.treemap)
 #         hbox.addWidget(self.oneline)
 #         self.widget.setLayout(hbox)
-
+        
         self.treemap.setGeometry(0,0,900,900)
         self.oneline.setGeometry(900,0,900,900)
         self.setCentralWidget(self.widget)
 #         self.setLayout(hbox)
-        self.setGeometry(100,100,1800,1000)
+        self.setGeometry(20,20,1800,950)
         self.setWindowTitle('Visualize')
         
 #         self.treemap.show()
@@ -221,7 +221,7 @@ mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
 
 mVis = Visualization( oneline = mOneline, treemap=mTreemap)
 
-
+# 
 sys.exit(app.exec_())
 
     
