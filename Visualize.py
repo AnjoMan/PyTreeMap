@@ -232,13 +232,9 @@ class Visualization(QMainWindow):
 app = QtGui.QApplication(sys.argv)
 
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
-myCanvas = PySideCanvas(width, height, 'Fault Tree')
-myCanvas.drawOutline([0,0,1700,800],1)
 
-drawRows(myCanvas,faultTree, width, height)
+mTreeVis = TreeVis(faultTree=faultTree)
  
-legend = Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]])
-myCanvas.draw(legend)
 sys.exit(app.exec_())
 
 ## draw a treemap diagram
