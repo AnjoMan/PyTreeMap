@@ -197,45 +197,49 @@ class Visualization(QMainWindow):
         return view
 
 
+
+
+
 ## draw a responsive tree diagram
-app = QtGui.QApplication(sys.argv)
-
-(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
-
-
-# get bounds for elList
-rects = [list(el.boundingRect().getRect()) for el in elements[Bus].values() + elements[Branch].values()]
-x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
-bound = [min(x0), min(y0), max(xn), max(yn)]
-
-# [element.fitIn([0,0,880,880], bound) for element in elList]
-
-
-mOneline = OneLineWidget([0,0,900,900])
-[mOneline.addElement(el) for el in elements[Bus].values()]
-[mOneline.addElement(el) for el in elements[Branch].values()]
-
-
-mTreemap = None
-mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
-
-mVis = Visualization( oneline = mOneline, treemap=mTreemap)
-
+# app = QtGui.QApplication(sys.argv)
 # 
-sys.exit(app.exec_())
+# (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, CPF_reductions)
+# 
+# # get bounds for elList
+# rects = [list(el.boundingRect().getRect()) for el in elements[Bus].values() + elements[Branch].values()]
+# x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+# bound = [min(x0), min(y0), max(xn), max(yn)]
+# 
+# # [element.fitIn([0,0,880,880], bound) for element in elList]
+# 
+# 
+# mOneline = OneLineWidget([0,0,900,900])
+# [mOneline.addElement(el) for el in elements[Bus].values()]
+# [mOneline.addElement(el) for el in elements[Branch].values()]
+# 
+# 
+# mTreemap = None
+# mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
+# 
+# mVis = Visualization( oneline = mOneline, treemap=mTreemap)
+# 
+# # 
+# sys.exit(app.exec_())
 
     
     
 ## draw a  tree diagram
-# app = QtGui.QApplication(sys.argv)
-# myCanvas = PySideCanvas(width, height, 'Fault Tree')
-# myCanvas.drawOutline([0,0,1700,800],1)
-# 
-# drawRows(myCanvas,faultTree, width, height)
-#  
-# legend = Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]])
-# myCanvas.draw(legend)
-# sys.exit(app.exec_())
+app = QtGui.QApplication(sys.argv)
+
+(faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
+myCanvas = PySideCanvas(width, height, 'Fault Tree')
+myCanvas.drawOutline([0,0,1700,800],1)
+
+drawRows(myCanvas,faultTree, width, height)
+ 
+legend = Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]])
+myCanvas.draw(legend)
+sys.exit(app.exec_())
 
 ## draw a treemap diagram
 # Treemap.compare = compare
