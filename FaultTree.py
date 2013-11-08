@@ -49,7 +49,7 @@ class TreeVis(QtGui.QWidget):
         self.rectangles, self.colors, self.outlines,self.lines, self.objs = [],[],[],[],[]
         self.colors = []
         
-        self.drawRows()
+        self.layoutMap()
         
         
         self.draw(Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]]))
@@ -57,6 +57,32 @@ class TreeVis(QtGui.QWidget):
         
         
         
+    def layoutMap(self):
+        width, height = self.width(), self.height()
+        #define spacing and layout for fault-tree from a connections dictionary
+        def hspacing(numEls, width):
+            nominalRadius = 10;
+            if numEls < 2:
+                sideGap,gap = round(width/2.0), 0
+            else:
+                sideGap = max(round(width * (20-0.2*numEls) / 100), 10)
+                gap = max(nominalRadius*2+5, round((width-2*sideGap)/(numEls-1)) )
+            return sideGap, gap
+        
+        y = round(0.15*height)
+        ygap = (height - y*2) / (len(self.faultTree.keys()) - 1)
+        for levelNo,level in self.faultTree.items():
+            sideGap, gap = hspacing(len(level), width)
+            x = sideGap
+            for fault in level:
+                fault.setPos((x,y))
+                fault.setParent(self)
+                fault.setLevel(levelNo)
+                self.draw(fault)
+                x+= gap
+            
+            y+= ygap
+    
     
     def initUI(self, width, height, title):
         self.show()
@@ -130,31 +156,7 @@ class TreeVis(QtGui.QWidget):
         
         qp.end()
     
-    def drawRows(self):
-        width, height = self.width(), self.height()
-        #define spacing and layout for fault-tree from a connections dictionary
-        def hspacing(numEls, width):
-            nominalRadius = 10;
-            if numEls < 2:
-                sideGap,gap = round(width/2.0), 0
-            else:
-                sideGap = max(round(width * (20-0.2*numEls) / 100), 10)
-                gap = max(nominalRadius*2+5, round((width-2*sideGap)/(numEls-1)) )
-            return sideGap, gap
-        
-        y = round(0.15*height)
-        ygap = (height - y*2) / (len(self.faultTree.keys()) - 1)
-        for levelNo,level in self.faultTree.items():
-            sideGap, gap = hspacing(len(level), width)
-            x = sideGap
-            for fault in level:
-                fault.setPos((x,y))
-                fault.setParent(self)
-                fault.setLevel(levelNo)
-                self.draw(fault)
-                x+= gap
-            
-            y+= ygap
+    
         
 class TreeFault(Fault):
     radius = 10
@@ -186,6 +188,32 @@ class TreeFault(Fault):
 #         return x,y+self.radius()
         return x,y
     
+    def subTreeValue(self,fault): return fault.value() + sum([self.subTreeValue(subFault) for subFault in fault.connections])
+            
+    def lineWeights(self):
+        try:
+            return self.line_weights
+        except:
+            levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level+1]]
+            if len(levelTotal) > 0:
+                mMax = max(levelTotal)
+                mMin = max(levelTotal)
+            
+            self.line_weights = [self.level * 0.1 * ( (self.subTreeValue(con) - 0.5*mMin) / (mMax-mMin))**3 if mMax-mMin > 0 else 1 for con in self.connections] 
+            return self.line_weights
+    
+    def nodeWeight(self):
+        try:
+            return self.node_weight
+        except:
+            levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level]]
+            if len(levelTotal) > 0:
+                mMax = max(levelTotal)
+                mMin = max(levelTotal)
+            
+            self.node_weight = (self.subTreeValue(self) - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
+            return self.node_weight
+    
     def draw(self,canvas, painter):
         #this method would be called by PySideCanvas when given using PySideCanvasObj.draw(fault)
         (x,y), r = self.pos, self.radius()
@@ -202,31 +230,45 @@ class TreeFault(Fault):
             fw,fh = metrics.width(text),metrics.height()
             qp.drawText(QPointF(x-fw/2,y+fh/4),text)
         
-        def subTreeValue(fault):
-            total=fault.value() + sum([subTreeValue(subFault) for subFault in fault.connections])
-            return total
+        
         
         pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
         
-        #draw connections
-        weights = np.array([tFault.value() for tFault in self.connections])
-        if len(weights) > 0:
-            weights = weights - min(weights)
-            weights = weights / max(weights) * 2 + 1
-            print weights
-        for weight,other in zip(weights, self.connections):
+        #get weights for lines
+        weights=self.lineWeights()
+        
+#         import pdb; pdb.set_trace()
+        
+        for weight,other in zip(weights,self.connections):
+            
+#             weight = 5*(subTreeValue(other)/levelTotal - 0.5)**2
+#             weight = self.level*0.1*((subTreeValue(other)-0.5*mMin)/(mMax-mMin))**3 if mMax-mMin > 0.0 else 1
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
             painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))
             painter.drawLine(QPointF(xT,yT),QPointF(xB,yB))
         
+        
+        #get modifiers for circle sizes
+        
+        levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level]]
+        if len(levelTotal) > 0:
+            mMax = max(levelTotal)
+            mMin = min(levelTotal)
+            levelTotal = sum(levelTotal) / len(levelTotal)
+            
+        
+        rMod = (self.subTreeValue(self) - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
+        rMod = self.nodeWeight()
+        r = r + rMod**2
+        
         for index,element in enumerate(self.elements):
             painter.setBrush(QtGui.QColor(element.__class__.color))
             painter.setPen(QtGui.QColor(80,80,80))
             if len(self.elements) > 1:
-                painter.drawPie(QRectF(x0,y0,x_,y_), round(startAngle*16), round(arcAngle*16))
+                painter.drawPie(QRectF(x-r,y-r,2*r,2*r), round(startAngle*16), round(arcAngle*16))
             else:
-                painter.drawEllipse(QRectF(x0,y0,x_,y_))
+                painter.drawEllipse(QRectF(x-r,y-r,2*r,2*r))
             lAngle = startAngle + (arcAngle/2.0)  #in degrees
             rd = 8.0/15 * r if len(self.elements) > 1 else 0
             

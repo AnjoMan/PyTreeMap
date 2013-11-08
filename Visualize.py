@@ -237,8 +237,4 @@ mTreeVis = TreeVis(faultTree=faultTree)
  
 sys.exit(app.exec_())
 
-## draw a treemap diagram
-# Treemap.compare = compare
-# myTreemap = buildTreemap(faults)
-# myTreemap.draw()
 
