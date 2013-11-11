@@ -140,6 +140,16 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
                     fault.addConnection(subFault)
             
     
+    
+    
+    #set limits for context getter.
+    values = [fault.subTreeValue() for fault in faults]
+    FaultType.setGlobalContext(min(values),  max(values))
+    for level, levelFaults in faultTree.items():
+        values = [fault.subTreeValue() for fault in levelFaults]
+        FaultType.setLevelContext(level, min(values), max(values))
+        
+    
     return faults, faultTree
 
 

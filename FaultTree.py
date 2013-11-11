@@ -188,31 +188,7 @@ class TreeFault(Fault):
 #         return x,y+self.radius()
         return x,y
     
-    def subTreeValue(self,fault): return fault.value() + sum([self.subTreeValue(subFault) for subFault in fault.connections])
-            
-    def lineWeights(self):
-        try:
-            return self.line_weights
-        except:
-            levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level+1]]
-            if len(levelTotal) > 0:
-                mMax = max(levelTotal)
-                mMin = max(levelTotal)
-            
-            self.line_weights = [self.level * 0.1 * ( (self.subTreeValue(con) - 0.5*mMin) / (mMax-mMin))**3 if mMax-mMin > 0 else 1 for con in self.connections] 
-            return self.line_weights
     
-    def nodeWeight(self):
-        try:
-            return self.node_weight
-        except:
-            levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level]]
-            if len(levelTotal) > 0:
-                mMax = max(levelTotal)
-                mMin = max(levelTotal)
-            
-            self.node_weight = (self.subTreeValue(self) - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
-            return self.node_weight
     
     def draw(self,canvas, painter):
         #this method would be called by PySideCanvas when given using PySideCanvasObj.draw(fault)
@@ -234,33 +210,23 @@ class TreeFault(Fault):
         
         pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
         
-        #get weights for lines
-        weights=self.lineWeights()
-        
-#         import pdb; pdb.set_trace()
-        
-        for weight,other in zip(weights,self.connections):
+      
+        for other in self.connections:
             
 #             weight = 5*(subTreeValue(other)/levelTotal - 0.5)**2
 #             weight = self.level*0.1*((subTreeValue(other)-0.5*mMin)/(mMax-mMin))**3 if mMax-mMin > 0.0 else 1
+            weight = 1 + other.getLevelContext()
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
             painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))
             painter.drawLine(QPointF(xT,yT),QPointF(xB,yB))
         
         
-        #get modifiers for circle sizes
-        
-        levelTotal = [self.subTreeValue(fault) for fault in self.parent.faultTree[self.level]]
-        if len(levelTotal) > 0:
-            mMax = max(levelTotal)
-            mMin = min(levelTotal)
-            levelTotal = sum(levelTotal) / len(levelTotal)
-            
-        
-        rMod = (self.subTreeValue(self) - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
-        rMod = self.nodeWeight()
-        r = r + rMod**2
+       
+#         rMod = (self.subTreeValue() - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
+#         rMod = self.nodeWeight()
+#         r = r + rMod**2
+        r = r + self.getLevelContext()
         
         for index,element in enumerate(self.elements):
             painter.setBrush(QtGui.QColor(element.__class__.color))

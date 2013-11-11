@@ -1,19 +1,25 @@
-from numpy import *
 
 
 
-
-mArray =[ [ [1,-1], [2,-2], [3,-3]], [ [1,-1], [2,-2], [3,-3]]]
-
-
-def negateY(element):
-    element = transpose(array(element))
-    element = transpose([list(element[0]), list(element[1]*-1)])
-    element = [list(point) for point in element]
-    return element
+class Shape(object):
     
- 
+    
+    @staticmethod
+    def setConstant(val):
+        Shape.val = val
+    
+    def getConstant(self):
+        return Shape.val
 
+class Circle(Shape):
+    pass
+    
+    
+    
+    
 
-nArray = [negateY(el) for el in mArray]
+Circle.setConstant(12)
 
+mCircle = Circle()
+
+print mCircle.getConstant()

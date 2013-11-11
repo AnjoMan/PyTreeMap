@@ -279,6 +279,7 @@ class Transformer(Element):
         pass
     
 class Fault(object):
+    levelContext = defaultdict(list)
     
     def __init__(self,listing, reduction = None):
         #listing is a dictionary containing: label, elements
@@ -302,9 +303,35 @@ class Fault(object):
 #         return string
         return repr(self)
     
+    @staticmethod
+    def setGlobalContext(floor, ceiling):
+        Fault.globalContext = {'floor': floor, 'ceiling':ceiling}
     
+    @staticmethod
+    def setLevelContext(level, floor, ceiling):
+        Fault.levelContext[level] = {'floor':floor, 'ceiling':ceiling}
+    
+    def getGlobalContext(self):
+        try:
+            min = self.globalContext['floor']
+            max = self.globalContext['ceiling']
+            
+            return (self.subTreeValue() - min) / (max-min)
+        except:
+            return 0
+    
+    def getLevelContext(self):
+        try:
+            min = self.levelContext[len(self.elements)]['floor']
+            max = self.levelContext[len(self.elements)]['ceiling']
+            return (self.subTreeValue() - min) / (max-min)
+        except:
+            return 0
+            
     def value(self):
         return self.reduction
+    
+    def subTreeValue(self): return self.value() + sum([subFault.subTreeValue() for subFault in self.connections])
     
     def getElements(self):
         return self.elements
