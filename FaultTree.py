@@ -210,22 +210,14 @@ class TreeFault(Fault):
         
         pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
         
-      
         for other in self.connections:
             
-#             weight = 5*(subTreeValue(other)/levelTotal - 0.5)**2
-#             weight = self.level*0.1*((subTreeValue(other)-0.5*mMin)/(mMax-mMin))**3 if mMax-mMin > 0.0 else 1
-            weight = 1 + other.getLevelContext()
+            weight = 0.2 + other.getLevelContext()
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
             painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))
             painter.drawLine(QPointF(xT,yT),QPointF(xB,yB))
         
-        
-       
-#         rMod = (self.subTreeValue() - 0.5*mMin) / (mMax-mMin) if mMax-mMin>0.0 else 0
-#         rMod = self.nodeWeight()
-#         r = r + rMod**2
         r = r + self.getLevelContext()
         
         for index,element in enumerate(self.elements):

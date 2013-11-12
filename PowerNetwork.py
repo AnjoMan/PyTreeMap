@@ -5,6 +5,7 @@ import weakref
 from PySide.QtGui import *
 from PySide.QtCore import *
 import sys
+import warnings
 
 
 class OneLineWidget(QWidget):
@@ -295,12 +296,6 @@ class Fault(object):
     def __repr__(self):
         return 'Fault ({})'.format(repr(self.elements))
     def __str__(self):
-#         def typeIds(mType): return [el.id for el in self.elements if el.__class__.__name__ == mType]
-#         branch, bus, gen = [typeIds(mType) for mType in [Element.Branch, Element.Bus, Element.Gen]]
-#         string = '\t\t'.join([self.label, 'CPF: %.3f' % self.reduction, 'elements:', str(branch), str(bus), str(gen)])
-#         string = '\n%s' % string
-#         
-#         return string
         return repr(self)
     
     @staticmethod
@@ -316,17 +311,16 @@ class Fault(object):
             min = self.globalContext['floor']
             max = self.globalContext['ceiling']
             
-            return (self.subTreeValue() - min) / (max-min)
-        except:
-            return 0
+            return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
+        except: return 0
     
     def getLevelContext(self):
         try:
             min = self.levelContext[len(self.elements)]['floor']
             max = self.levelContext[len(self.elements)]['ceiling']
-            return (self.subTreeValue() - min) / (max-min)
-        except:
-            return 0
+            
+            return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
+        except: return 0
             
     def value(self):
         return self.reduction
