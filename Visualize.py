@@ -67,15 +67,25 @@ def getGenId(bus):
     except ValueError:
         return -1
 
+def defaultIZE(dictionary,default_factory=list):
+    newDict = defaultdict(default_factory)
+    for k,v in dictionary.items():
+        newDict[k]=v
+    
+    return newDict
+    
 def getTransEls(trans):
     transEls = []
     #get branches involved
     transEls += [ elements[Branch][getBranchId(listing)] for listing in (trans[0][0] if len(trans[0]) > 0 else [])]
     #get busses involved
 #     import pdb; pdb.set_trace()
-    transEls += [ elements[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
+    mBusses = defaultIZE(elements[Bus])
+    transEls += [mBusses[id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
      #get gens involved
-    transEls += [ elements[Bus][getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
+    
+    
+    transEls += [ mBusses[getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
     transEls = [el for el in transEls if el != []]
     return transEls
 
@@ -85,28 +95,20 @@ def negateY(element):
     element = [list(point) for point in element]
     return element
 
-def defaultIZE(dictionary,default_factory=list):
-    newDict = defaultdict(default_factory)
-    for k,v in dictionary.items():
-        newDict[k]=v
-    
-    return newDict
+
     
 # build elements
 busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
-elements[Bus] = defaultIZE({id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} )
-# # import pdb; pdb.set_trace()
+elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
 
 branchPos = [negateY(element) for element in base.branch_geo[0]]
-elements[Branch] = defaultIZE({int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)})
+elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
 
 
 genBusses = [int(el) for el in base.gen.transpose()[0]]
 
-elements[Gen] = defaultIZE({int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)})
-
+elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
 elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
-
 
 
 
@@ -256,12 +258,12 @@ class Visualization(QMainWindow):
     
     
 ## draw a  tree diagram
-app = QtGui.QApplication(sys.argv)
+# app = QtGui.QApplication(sys.argv)
 
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
 
-mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
+# mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
  
-sys.exit(app.exec_())
+# sys.exit(app.exec_())
 
 
