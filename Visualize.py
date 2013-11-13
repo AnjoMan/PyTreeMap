@@ -62,7 +62,10 @@ def getBranchId(busEnds):
 
 def getGenId(bus):
     #find the id of a generator given the bus it is in
-    return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
+    try:
+        return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
+    except ValueError:
+        return -1
 
 def getTransEls(trans):
     transEls = []
@@ -73,6 +76,7 @@ def getTransEls(trans):
     transEls += [ elements[Bus][id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
      #get gens involved
     transEls += [ elements[Bus][getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
+    transEls = [el for el in transEls if el != []]
     return transEls
 
 def negateY(element):
@@ -81,18 +85,31 @@ def negateY(element):
     element = [list(point) for point in element]
     return element
 
+def defaultIZE(dictionary,default_factory=list):
+    newDict = defaultdict(default_factory)
+    for k,v in dictionary.items():
+        newDict[k]=v
+    
+    return newDict
+    
 # build elements
 busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
-elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} 
-# import pdb; pdb.set_trace()
+elements[Bus] = defaultIZE({id: Bus(id, pos) for id, pos in  zip(busIds, busPos)} )
+# # import pdb; pdb.set_trace()
 
 branchPos = [negateY(element) for element in base.branch_geo[0]]
-elements[Branch] = {int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
+elements[Branch] = defaultIZE({int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)})
+
 
 genBusses = [int(el) for el in base.gen.transpose()[0]]
 
-elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
+elements[Gen] = defaultIZE({int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)})
+
 elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
+
+
+
+
 elList = []
 for dict in elements.values():
     elList += dict.values()
@@ -243,7 +260,7 @@ app = QtGui.QApplication(sys.argv)
 
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
 
-mTreeVis = TreeVis(faultTree=faultTree)
+mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
  
 sys.exit(app.exec_())
 
