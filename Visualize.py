@@ -13,6 +13,16 @@ from sets import Set
 import sys
 
 
+print "\n\n\n"
+def log(string):
+    print "\t" + '|| ' + string
+# import cProfile, pstats, StringIO
+# pr = cProfile.Profile4()
+# pr.enable()
+
+
+
+
 def compare(parentValue, childValue):
     x1,y1 = parentValue
     x2,y2 = childValue
@@ -26,6 +36,8 @@ def compare(parentValue, childValue):
 cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
 
 
+log('.mat file loaded')
+
 #get loading, reductions, and corresponding faults    
 baseLoad = cpfResults['baseLoad'][0,0]
 CPF_reductions = baseLoad- cpfResults['CPFloads'][0];
@@ -34,16 +46,7 @@ base = cpfResults['base'][0,0]
 
 
 
-
-
-
-
-
-
-
-
 branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
-
 nBranches = len(base.branch)
 nBusses = len(base.bus)
 nGens = len(base.gen)
@@ -116,6 +119,7 @@ elList = []
 for dict in elements.values():
     elList += dict.values()
 
+log('Grid Elements Created')
 #convert fault listings into simple lists instead of scipy matlab structures
 def collapse(listing):
     branch, bus, gen, trans = [list(el[0]) if len(el) == 1 else list(el) for el in [listing.branch, listing.bus, listing.gen, listing.trans]]
@@ -135,9 +139,17 @@ CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
 
 def getFaults(FaultType, CPFbranches, CPF_reductions):
     #get faults
+    
+#     import pdb; pdb.set_trace()
     faults = [ FaultType(listing, reduction) for listing, reduction in zip(CPFbranches, CPF_reductions) if reduction > 0]
     
+    
+    
+    import pdb; pdb.set_trace()
+    log('faults created')
     faultTree = defaultdict(list)
+    
+    
     
     #sort faults by number of element in each
     for fault in faults:
@@ -145,6 +157,9 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     
     if 0 in faultTree:
         del faultTree[0]
+    
+    
+    log('faultTree created')
     
     from sets import Set
     
@@ -160,6 +175,7 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
             
     
     
+    log('connections built')
     
     #set limits for context getter.
     values = [fault.subTreeValue() for fault in faults]
@@ -169,6 +185,7 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
         FaultType.setLevelContext(level, min(values), max(values))
         
     
+    log('limits found')
     return faults, faultTree
 
 
@@ -258,12 +275,22 @@ class Visualization(QMainWindow):
     
     
 ## draw a  tree diagram
-# app = QtGui.QApplication(sys.argv)
+app = QtGui.QApplication(sys.argv)
+
+
 
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
 
-# mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
+mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
  
-# sys.exit(app.exec_())
+sys.exit(app.exec_())
 
 
+
+
+# pr.disable()
+# s = StringIO.StringIO()
+# 
+# ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
+# ps.print_stats()
+# print s.getvalue()

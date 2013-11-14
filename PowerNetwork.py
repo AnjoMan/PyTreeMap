@@ -127,6 +127,12 @@ class Element(QGraphicsItem,object ):
         geo = self.getGeo()
         return geo
     
+    def addFault(self,fault):
+        try:
+            self.faults += [fault]
+        except AttributeError:
+            self.faults = [fault]
+            
     def boundingRect(self):
         return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
 
@@ -291,8 +297,13 @@ class Fault(object):
         self.elements = listing['elements']
         self.connections = []
         
+        for element in self.elements:
+            element.addFault(self)
+        
     
-    
+    def __ge__(self,value):
+        return len(self.elements) >= value
+        
     def __repr__(self):
         return 'Fault ({})'.format(repr(self.elements))
     def __str__(self):
