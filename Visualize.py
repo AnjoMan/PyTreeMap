@@ -145,7 +145,7 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     
     
     
-    import pdb; pdb.set_trace()
+#     import pdb; pdb.set_trace()
     log('faults created')
     faultTree = defaultdict(list)
     
@@ -160,6 +160,13 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     
     
     log('faultTree created')
+    
+    keys = sorted(faultTree.keys())
+    keys.reverse()
+    
+    
+#     for level in keys:
+        
     
     from sets import Set
     
