@@ -16,10 +16,13 @@ import sys
 print "\n\n\n"
 def log(string):
     print "\t" + '|| ' + string
-# import cProfile, pstats, StringIO
-# pr = cProfile.Profile4()
-# pr.enable()
 
+
+    
+import cProfile, pstats, StringIO
+pr = cProfile.Profile()
+# pr.enable()
+# pr.disable()
 
 
 
@@ -170,17 +173,21 @@ def getFaults(FaultType, CPFbranches, CPF_reductions):
     
     from sets import Set
     
+    
+    
+    pr.enable()
     #identify connections
-    connections = defaultdict(list)
     keys = sorted(faultTree.keys())
     for level, nextLevel in zip( keys[0:-1], keys[1:]):
         for fault in faultTree[level]:
-            faultEls = Set(fault.elements)
             for subFault in faultTree[nextLevel]:
-                if faultEls.issubset(Set(subFault.elements)):
+                if fault.isParentOf(subFault):
                     fault.addConnection(subFault)
             
     
+    
+    
+    pr.disable()
     
     log('connections built')
     
@@ -236,6 +243,8 @@ class Visualization(QMainWindow):
 #         self.treemap.show()
 #         self.oneline.show()
         self.show()
+        
+        log('visualization created')
     
     
     def createView(self, scene):
@@ -289,15 +298,18 @@ app = QtGui.QApplication(sys.argv)
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
 
 mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
- 
+
+s = StringIO.StringIO()
+
+ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
+ps.print_stats()
+print s.getvalue()
+
+
+
 sys.exit(app.exec_())
 
 
 
 
-# pr.disable()
-# s = StringIO.StringIO()
-# 
-# ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
-# ps.print_stats()
-# print s.getvalue()
+

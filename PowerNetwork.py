@@ -92,6 +92,7 @@ class Element(QGraphicsItem,object ):
     weight = 10
     geo = defaultdict(None)
     hColor= {False: Qt.darkGray, True: Qt.darkRed}
+    
     def __init__(self,id, pos):
         super(Element, self).__init__()
         self.id=id
@@ -108,24 +109,20 @@ class Element(QGraphicsItem,object ):
         self.highlight = False
     
     
-    def __repr__(self):
-        return self.__class__.__name__ + " %04d" % self.id
-    
-    def __eq__(self, other):
+    def __repr__(self): return self.__class__.__name__ + " %04d" % self.id
+    def __eq__(self, other): 
         return True if self.__class__.__name__ == other.__class__.__name__ and self.id == other.id else False
     
-    def __hash__(self):
-        #has the string representation of the element, eg 'bus 01'
-        return hash(str(self))
+    def __cmp__(self, other):
+        if self.__class__.__name__ < other.__class__.__name__: return -1
+        elif self.__class__.__name__ > other.__class__.__name__: return 1        
+        else: return self.id - other.id
     
-    def getGeo(self):
-        return Element.geo[self.__class__][self.id]
+    def __hash__(self): return hash(str(self))
     
-    def getPos(self):
-        return self.pos
-    def secondary(self):
-        geo = self.getGeo()
-        return geo
+    def getGeo(self): return Element.geo[self.__class__][self.id]
+    def getPos(self): return self.pos
+    def secondary(self): return self.getGeo()
     
     def addFault(self,fault):
         try:
@@ -133,8 +130,7 @@ class Element(QGraphicsItem,object ):
         except AttributeError:
             self.faults = [fault]
             
-    def boundingRect(self):
-        return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+    def boundingRect(self): return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
 
     
     def fitIn(self, newBox, oldBox):
@@ -296,13 +292,43 @@ class Fault(object):
         
         self.elements = listing['elements']
         self.connections = []
-        
+        self.elements.sort()
         for element in self.elements:
             element.addFault(self)
         
     
-    def __ge__(self,value):
-        return len(self.elements) >= value
+
+    def isParentOf(self, other):
+        #return true if contains same elements as 'other' plus extras
+        nSelf, nOther = len(self.elements), len(other.elements)
+        
+        #only a direct child if there is one more element
+        if nOther != nSelf + 1: return false
+        
+        s,o= 0,0
+        matches = 0;
+        nomatch = 0;
+        while matches < nSelf:
+            if s >= nSelf or o >= nOther: #if we passed the end of either array but not all in self.elements are matched
+                return False
+                
+            if self.elements[s] == other.elements[o]:
+                #increment matches count and move forward in both lists
+                matches += 1
+                s+=1
+                o+=1
+            else:
+                #increment nomatch count and move forward only in child list
+                nomatch+=1
+                o+=1
+            
+            if nomatch > 2: #if we count more than 1 nomatch it can't be a direct child
+                return False
+        
+        #if matches == nSelf, all in self.elements are matched and loop stops. is parent.
+        return True
+        
+            
         
     def __repr__(self):
         return 'Fault ({})'.format(repr(self.elements))
@@ -421,12 +447,13 @@ def flatten(l, ltypes=(list, tuple)):
 
 
 def main():
-    
-    app = QApplication(sys.argv)
-    
-    ex = OneLineWidget([0,0,900,900])
-    ex.addElement(Element(1,[100,100]))
-    sys.exit(app.exec_())
+    pass
+#     
+#     app = QApplication(sys.argv)
+#     
+#     ex = OneLineWidget([0,0,900,900])
+#     ex.addElement(Element(1,[100,100]))
+#     sys.exit(app.exec_())
 
 
     

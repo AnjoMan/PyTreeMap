@@ -1,22 +1,32 @@
-from collections import defaultdict
 
 
-def defaultIZE(dictionary,default_factory=list):
-    newDict = defaultdict(default_factory)
-    for k,v in dictionary.items():
-        newDict[k]=v
+class A(object):
     
-    return newDict
+    def __init__(self, val, lab):
+        self.val = val
+        self.lab = lab
+    def __repr__(self):
+        return self.lab + (' %04d' % self.val)
+    def __hash__(self):
+        return hash( repr(self))
+    
+    def __cmp__(self, other):
+        if self.lab< other.lab: return -1
+        
+        elif self.lab > other.lab: return 1
+        
+        else:
+            return self.val - other.val
+        
+        
 
-a = {id: value for id,value in zip( [1,2,3,4], ['a','b','c','c'])}
+labels = ['Vic', 'Vic', 'Forth', 'Rog']
 
-b = defaultIZE(a)
-
-
-c = [1,2,5]
+mList = [A(i,label) for i, label in enumerate(labels)]
 
 
-print [b[el] for el in c]
+print mList
+print sorted(mList)
 
 
-
+    
