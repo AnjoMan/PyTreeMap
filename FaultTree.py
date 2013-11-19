@@ -74,7 +74,7 @@ class TreeVis(QtGui.QWidget):
         for levelNo,level in self.faultTree.items():
             sideGap, gap = hspacing(len(level), width)
             x = sideGap
-            for fault in level:
+            for fault in sorted(level, key= lambda mFault: mFault.value()) :
                 fault.setPos((x,y))
                 fault.setParent(self)
                 fault.setLevel(levelNo)
@@ -212,7 +212,8 @@ class TreeFault(Fault):
         
         for other in self.connections:
             
-            weight = 0.2 + other.getLevelContext()
+            weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
+#             print weight
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
             painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))

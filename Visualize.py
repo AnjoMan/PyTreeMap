@@ -291,22 +291,25 @@ class Visualization(QMainWindow):
     
     
 ## draw a  tree diagram
-app = QtGui.QApplication(sys.argv)
+
 
 
 
 (faults, faultTree) = getFaults(TreeFault, CPFbranches, CPF_reductions)
 
-mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1000,700])
-
-s = StringIO.StringIO()
-
-ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
-ps.print_stats()
-print s.getvalue()
-
+# 
+# s = StringIO.StringIO()
+# 
+# ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
+# ps.print_stats()
+# print s.getvalue()
 
 
+# values = [fault.getGlobalContext() for fault in faults]
+
+# scipy.io.savemat('globalContexts.mat', {'values':values})
+app = QtGui.QApplication(sys.argv)
+mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
 sys.exit(app.exec_())
 
 
