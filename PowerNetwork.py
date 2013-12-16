@@ -174,8 +174,8 @@ class Element(QGraphicsItem,object ):
     
     def mousePressEvent(self, event):
         self.highlight = not self.highlight
-        print self.highlight
-        print str(self)
+        print(self.highlight)
+        print(str(self))
         self.update(self.boundingRect())
     
     def toggleHighlight(self):
@@ -292,7 +292,7 @@ class Fault(object):
         
         self.elements = listing['elements']
         self.connections = []
-        self.elements.sort()
+        self.elements.sort(key=hash)
         for element in self.elements:
             element.addFault(self)
         

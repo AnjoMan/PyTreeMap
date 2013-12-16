@@ -1,4 +1,4 @@
-import Tkinter as Tk
+
 import numpy as np
 from collections import defaultdict
 import colorsys

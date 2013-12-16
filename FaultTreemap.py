@@ -1,6 +1,5 @@
 import scipy.io
 import numpy as np
-import Tkinter as Tk
 # from mlabwrap import mlab
 import colorsys
 from collections import defaultdict

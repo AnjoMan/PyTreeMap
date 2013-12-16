@@ -67,10 +67,10 @@ class TreemapVis(QWidget):
 
     def mousePressEvent(self, e):
         for widget in self.widgets:
-            print widget.geometry()
+            print(widget.geometry())
     
     def resizeEvent(self, e):
-        print 'Resized!'
+        print( 'Resized!')
         
     def build(self,faultTree,square, level = 2):
         

@@ -4,8 +4,9 @@ import colorsys
 from collections import defaultdict
 from PowerNetwork import *
 from Treemap import layout
-from FaultTreemap import *
-from sets import Set
+from PySide import QtGui, QtCore
+# from FaultTreemap import *
+# from sets import Set
 import sys
 
 
