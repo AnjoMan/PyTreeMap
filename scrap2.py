@@ -1,15 +1,19 @@
-mDict = {'length': 7, 'girth': 'thick', 'hardness': 10}
-
-
-print(mDict)
-
-
-
-
-
-for k, v in mDict.items():
-    print( k, str(v))
+def decorator(func):
+    def modify(*args, **kwargs):
+        variable = kwargs.pop('variable', "nothing here")
+        print(variable)
+        x,y = func(*args, **kwargs)
+        return x,y
+        
     
+    return modify
+
+@decorator
+def func(a,b):
+    print (a**2, b**2)
+    return a**2, b**2
 
 
-vals = mDict.values()
+
+func(a=4, b=5, variable="hi")
+func(4,5)

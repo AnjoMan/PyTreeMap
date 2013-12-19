@@ -273,7 +273,7 @@ class Visualization(QMainWindow):
 ## draw a responsive tree diagram
 
 
-(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0.15)
+(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
 
 # get bounds for elList
 rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]

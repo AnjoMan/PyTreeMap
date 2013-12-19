@@ -125,7 +125,7 @@ class Rectangle(QWidget):
 #         print self.fault
         self.setGeometry(*pos)
         self.color = QColor(200,100,100)
-        
+        self.highlight = False
 #         for element in self.fault.elements:
 #             self.enterEvent.connect(element.toggleHighlight)
 #             self.leaveEvent.connect(element.toggleHighlight)
@@ -133,10 +133,12 @@ class Rectangle(QWidget):
     def setColor(self,level):
         self.color=randomColor(level)
     def enterEvent(self, e):
+        self.toggleHighlight()
         for element in self.fault.elements:
             element.toggleHighlight()
     
     def leaveEvent(self, e):
+        self.toggleHighlight()
         for element in self.fault.elements:
             element.toggleHighlight()
 
@@ -145,10 +147,23 @@ class Rectangle(QWidget):
 #         print 'Painted: ',self.geometry(), self.color
         painter = QPainter(self)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(self.color)
+        
+        if self.highlight:
+            r,b,g = self.color.red(), self.color.blue(), self.color.green()
+            h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
+            intensity = 130
+            painter.setBrush(QColor.fromHsv(h, s*0.6, 160))
+        else:
+            painter.setBrush(self.color)
+            
+#         painter.setBrush(self.color)
 #         painter.setBrush(Qt.NoBrush)
         painter.drawRect(1,1,self.width()-2, self.height()-2)
         painter.end()
+    
+    def toggleHighlight(self):
+        self.highlight = not self.highlight
+        self.update()
     
     def setFault(self, fault):
         self.fault = fault

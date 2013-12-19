@@ -125,10 +125,8 @@ class Element(QGraphicsItem,object ):
     def secondary(self): return self.getGeo()
     
     def addFault(self,fault):
-        try:
-            self.faults += [fault]
-        except AttributeError:
-            self.faults = [fault]
+        try: self.faults += [fault]
+        except AttributeError: self.faults = [fault]
             
     def boundingRect(self): return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
 
