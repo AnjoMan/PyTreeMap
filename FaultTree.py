@@ -72,17 +72,70 @@ class TreeVis(QtGui.QWidget):
         
         y = round(0.15*height)
         ygap = (height - y*2) / (len(self.faultTree.keys()) - 1)
-        for levelNo,level in self.faultTree.items():
-            sideGap, gap = hspacing(len(level), width)
-            x = sideGap
-            for fault in sorted(level, key= lambda mFault: mFault.value()) :
-                fault.setPos((x,y))
-                fault.setParent(self)
+        
+        #build for equal spacing with fixed radii
+#         for levelNo,level in self.faultTree.items():
+#             sideGap, gap = hspacing(len(level), width)
+#             x = sideGap
+#             for fault in sorted(level, key= lambda mFault: mFault.value()) :
+#                 fault.setPos((x,y))
+#                 fault.setParent(self)
+#                 fault.setLevel(levelNo)
+#                 self.draw(fault)
+#                 x+= gap
+#             
+#             y+= ygap
+        
+        #build for equal spacing with radii scaled by levelContext 
+        
+        for levelNo, level in self.faultTree.items():
+            if len(level) <2:  #case where only one fault is present
+                fault = level[0]
+                fault.radius = 15
+                fault.setPos((width/2,y))
                 fault.setLevel(levelNo)
                 self.draw(fault)
-                x+= gap
+                continue
             
+            level = sorted(level, key= lambda mFault: mFault.value())
+            
+            if len(level) == 2: #case where exactly two faults are present and we want to add spacing outside
+                level[0].radius, level[1].radius = (30,20) if level[0].getLevelContext() > level[1].getLevelContext() else (20,30)
+                level[0].setPos( (width * 0.30+ level[0].getRadius(), y))
+                level[1].setPos( (width - width*0.30 - level[1].getRadius(), y))
+                level[0].setLevel(levelNo)
+                level[1].setLevel(levelNo)
+                self.draw(level[0])
+                self.draw(level[1])
+                continue
+            
+            else:
+                x,_ = sideGap, _ = hspacing(len(level), width) # this is a little bogus since I only want 'sideGap'
+                space = width-2*sideGap
+                
+                sizes = [fault.getLevelContext()*0.6+0.4 for fault in level] #get all levels
+                
+                #first try to set sizes for XX% coverage
+                scale = (space *0.80)/sum(sizes)
+                gap = (space*0.20)/(len(sizes)-1)
+                radii = [size*scale / 2.0 for size in sizes]
+                
+                mMax =  max(radii)
+                #if some are too big, scale them all down and increase the gap size
+                if mMax > 30:
+                    radii = [radius * 30 /mMax for radius in radii]
+                    gap = (space - sum(radii)*2) / (len(radii)-1)
+                
+#                 for radius, fault in zip(radii, sorted(level, key= lambda mFault: mFault.value())) :
+                for radius, fault in zip(radii, level):
+                    fault.radius = radius
+                    fault.setPos( (x+radius, y))
+                    fault.setParent(self)
+                    fault.setLevel(levelNo)
+                    self.draw(fault)
+                    x+= 2* radius + gap
             y+= ygap
+            
     
     
     def initUI(self, width, height, title):
@@ -165,10 +218,14 @@ class TreeFault(Fault):
         super(TreeFault,self).__init__(listing, reduction=reduction)
         
         self.pos = None,None
+        self.radius = 10;
         self.connections = []
     
-    def radius(self):
-        return 10 + 0.9*len(self.elements)-1
+    def getRadius(self):
+        try:
+            return self.radius
+        except:
+            return 10 + 0.9*len(self.elements)-1
         
     def setPos(self,pos):
         self.pos = pos;
@@ -193,7 +250,7 @@ class TreeFault(Fault):
     
     def draw(self,canvas, painter):
         #this method would be called by PySideCanvas when given using PySideCanvasObj.draw(fault)
-        (x,y), r = self.pos, self.radius()
+        (x,y), r = self.pos, self.getRadius()
         x0,y0, x_,y_ = x-r,y-r,2*r,2*r
         startAngle, arcAngle = 0, 360 * 1/len(self.elements)
         
@@ -214,13 +271,13 @@ class TreeFault(Fault):
         for other in self.connections:
             
             weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
-#             print weight
+#             weight=1
+            
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
             painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))
             painter.drawLine(QPointF(xT,yT),QPointF(xB,yB))
         
-        r = r + self.getLevelContext()
         
         for index,element in enumerate(self.elements):
             painter.setBrush(QtGui.QColor(element.__class__.color))

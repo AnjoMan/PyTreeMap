@@ -281,6 +281,8 @@ class Transformer(Element):
     
 class Fault(object):
     levelContext = defaultdict(list)
+    globalContext = defaultdict(list)
+    cumulativeContext = defaultdict(list)
     
     def __init__(self,listing, reduction = None):
         #listing is a dictionary containing: label, elements
@@ -341,19 +343,28 @@ class Fault(object):
     def setLevelContext(level, floor, ceiling):
         Fault.levelContext[level] = {'floor':floor, 'ceiling':ceiling}
     
+    @staticmethod
+    def setCumulativeContext(level,floor,ceiling):
+        Fault.cumulativeContext[level] = {'floor': floor, 'ceiling': ceiling}
+    
     def getGlobalContext(self):
         try:
             min = self.globalContext['floor']
             max = self.globalContext['ceiling']
-            
-            return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
+            return (self.value() - min) / (max-min) if (max-min) > 0 else 0
         except: return 0
     
     def getLevelContext(self):
         try:
             min = self.levelContext[len(self.elements)]['floor']
             max = self.levelContext[len(self.elements)]['ceiling']
-            
+            return (self.value() - min) / (max-min) if (max-min) > 0 else 0
+        except: return 0
+    
+    def getCumulativeContext(self):
+        try:
+            min = self.cumulativeContext[len(self.elements)]['floor']
+            max = self.cumulativeContext[len(self.elements)]['ceiling']
             return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
         except: return 0
             
