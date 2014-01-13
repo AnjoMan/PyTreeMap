@@ -21,7 +21,7 @@ def randomColor(level=1):
 #         print randomColor.mods
         randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
     elif level > 1:
-        randomColor.mods = randomColor.mods[0:level-1] + [random.rand()*4.0/10 * 1/level]
+        randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
 #         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
 #     print randomColor.mods
     return QColor(rgb(sum(randomColor.mods)%1,0.3,0.7))     

@@ -273,24 +273,24 @@ class Visualization(QMainWindow):
 ## draw a responsive treemap diagram
 
 
-# (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
-# 
-# # get bounds for elList
-# rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]
-# x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
-# bound = [min(x0), min(y0), max(xn), max(yn)]
-# 
-# [element.fitIn([0,0,880,880], bound) for element in elList]
-# 
-# 
-# app = QtGui.QApplication(sys.argv)
-# mOneline = OneLineWidget([0,0,900,900])
-# [mOneline.addElement(el) for el in elements[Bus].values()]
-# [mOneline.addElement(el) for el in elements[Branch].values()]
-# mTreemap = None
-# mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
-# mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
-# sys.exit(app.exec_())
+(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
+
+# get bounds for elList
+rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]
+x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+bound = [min(x0), min(y0), max(xn), max(yn)]
+
+[element.fitIn([0,0,880,880], bound) for element in elList]
+
+
+app = QtGui.QApplication(sys.argv)
+mOneline = OneLineWidget([0,0,900,900])
+[mOneline.addElement(el) for el in elements[Bus].values()]
+[mOneline.addElement(el) for el in elements[Branch].values()]
+mTreemap = None
+mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
+mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+sys.exit(app.exec_())
 
     
     
@@ -299,25 +299,25 @@ class Visualization(QMainWindow):
 
 
 
-(faults, faultTree) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
-
+# (faults, faultTree) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
 # 
-
-
-
-# values = [fault.getGlobalContext() for fault in faults]
-
-
-# from matplotlib import pyplot
+# # 
 # 
-# mVals = list(loads) + [baseLoad]
-# pyplot.bar(range(1,len(mVals)+1),mVals)
-# pyplot.show()
-
-
-
-
-app = QtGui.QApplication(sys.argv)
-mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
-sys.exit(app.exec_())
+# 
+# 
+# # values = [fault.getGlobalContext() for fault in faults]
+# 
+# 
+# # from matplotlib import pyplot
+# # 
+# # mVals = list(loads) + [baseLoad]
+# # pyplot.bar(range(1,len(mVals)+1),mVals)
+# # pyplot.show()
+# 
+# 
+# 
+# 
+# app = QtGui.QApplication(sys.argv)
+# mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
+# sys.exit(app.exec_())
  
