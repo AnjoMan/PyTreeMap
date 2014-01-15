@@ -12,17 +12,20 @@ import sys
 from PySide import QtGui, QtCore
 
 
+file = 'cpfResults'
+# file = 'cpfResults_case30_full_3_levels'
+
+
+
+
 print("\n\n\n")
 def log(string):
     print("\t" + '|| ' + string)
 
 
     
-import cProfile, pstats
-from io import StringIO
+import cProfile
 pr = cProfile.Profile()
-# pr.enable()
-# pr.disable()
 
 
 
@@ -34,9 +37,18 @@ def compare(parentValue, childValue):
 
 
 
+
+
+
+pr.enable()
+   
+   
+   
+   
+   
    
 #load cpf results from matlab file
-cpfResults = scipy.io.loadmat('cpfResults', struct_as_record=False)
+cpfResults = scipy.io.loadmat(file, struct_as_record=False)
 
 
 log('.mat file loaded')
@@ -57,6 +69,19 @@ nBusses = len(base.bus)
 nGens = len(base.gen)
 nTrans = len(base.trans[0])
 elements = defaultdict(list)
+
+
+
+
+
+pr.disable()
+
+
+
+
+
+
+
 
 def getBranchId(busEnds):
     #find the branch index of a branch from the busses it connects to.
@@ -148,10 +173,9 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(CPFbranches, CPF_loads) if (baseLoad-load)/baseLoad > filter]
 
     log('faults created')
+    
+    
     faultTree = defaultdict(list)
-    
-    
-    
     #sort faults by number of element in each
     for fault in faults:
         faultTree[len(fault.getElements())] += [fault]
@@ -159,37 +183,58 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     if 0 in faultTree:
         del faultTree[0]
     
-    
     log('faultTree created')
+    
+    
+    
+    
+    
+    #get fault position masks by element    
+    maskLength = len(faults)
+    faultByElement = {element: array([False]*maskLength) for element in elList}
+    for index, fault in enumerate(faults):
+        for element in fault.elements:
+            faultByElement[element][index] = True
+    
+#     import pdb; pdb.set_trace()
+    log('fault indexes listed per-element')
+    
     
     keys = sorted(faultTree.keys())
     keys.reverse()
     
-    
-#     for level in keys:
-        
-    
-    
-    
-    
+    pr = cProfile.Profile()
     pr.enable()
+    
+    
+#     #identify connections
+#     keys = sorted(faultTree.keys())
+#     for level, nextLevel in zip( keys[0:-1], keys[1:]):
+#         for fault in faultTree[level]:
+#             for subFault in faultTree[nextLevel]:
+#                 if fault.isParentOf(subFault):
+#                     fault.addConnection(subFault)
+    
     #identify connections
     keys = sorted(faultTree.keys())
-    for level, nextLevel in zip( keys[0:-1], keys[1:]):
+    for level in keys[0:-1]:
+        print(level)
         for fault in faultTree[level]:
-            for subFault in faultTree[nextLevel]:
-                if fault.isParentOf(subFault):
-                    fault.addConnection(subFault)
+            masks = [[faultByElement[element] for element in fault.elements]]+[array(maskLength*[True])]
+            mask = []
+            for mTuple in zip(*masks):
+                mask.append(all(mTuple))
+                
+            mask  = array([all(mTuple) for mTuple in zip(*masks)])
+            subFaults = [subFault for subFault in faults[mask] if len(subFault.elements) > level]
+            for subFault in subFaults:
+                fault.addConnection(mFault)
             
-    
-    
-    
     pr.disable()
+
     
     log('connections built')
-    
     #set limits for context getter.
-#     values = [fault.subTreeValue() for fault in faults]
     values = [fault.value() for fault in faults]
     FaultType.setGlobalContext(min(values),  max(values))
     for level, levelFaults in faultTree.items():
@@ -202,9 +247,9 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
         
     
     log('limits found')
-    return faults, faultTree
+    return faults, faultTree, pr
 
-
+    p.join()
 
 width, height=  1700,800
 
@@ -260,64 +305,66 @@ class Visualization(QMainWindow):
     
         return view
 
-
-## Profiler
-# s = StringIO.StringIO()
-# 
-# ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
-# ps.print_stats()
-# print s.getvalue()
-
-
-
-## draw a responsive treemap diagram
-
-
-(faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
-
-# get bounds for elList
-rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]
-x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
-bound = [min(x0), min(y0), max(xn), max(yn)]
-
-[element.fitIn([0,0,880,880], bound) for element in elList]
-
-
-app = QtGui.QApplication(sys.argv)
-mOneline = OneLineWidget([0,0,900,900])
-[mOneline.addElement(el) for el in elements[Bus].values()]
-[mOneline.addElement(el) for el in elements[Branch].values()]
-mTreemap = None
-mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
-mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
-sys.exit(app.exec_())
-
+if __name__ == '__main__':
+    
+#     s = io.StringIO()
+#     
+#     ps = pstats.Stats(pr,stream=s).sort_stats('cumulative')
+#     ps.print_stats()
+#     print(s.getvalue())
     
     
-## draw a  tree diagram
-
-
-
-
-# (faults, faultTree) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
-# 
-# # 
-# 
-# 
-# 
-# # values = [fault.getGlobalContext() for fault in faults]
-# 
-# 
-# # from matplotlib import pyplot
-# # 
-# # mVals = list(loads) + [baseLoad]
-# # pyplot.bar(range(1,len(mVals)+1),mVals)
-# # pyplot.show()
-# 
-# 
-# 
-# 
-# app = QtGui.QApplication(sys.argv)
-# mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
-# sys.exit(app.exec_())
- 
+    
+    ## draw a responsive treemap diagram
+    
+    
+    # (faults, faultTree) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
+    # 
+    # # get bounds for elList
+    # rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]
+    # x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
+    # bound = [min(x0), min(y0), max(xn), max(yn)]
+    # 
+    # [element.fitIn([0,0,880,880], bound) for element in elList]
+    # 
+    # 
+    # app = QtGui.QApplication(sys.argv)
+    # mOneline = OneLineWidget([0,0,900,900])
+    # [mOneline.addElement(el) for el in elements[Bus].values()]
+    # [mOneline.addElement(el) for el in elements[Branch].values()]
+    # mTreemap = None
+    # mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
+    # mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+    # sys.exit(app.exec_())
+    
+        
+        
+    ## draw a  tree diagram
+    
+    
+    
+    
+    (faults, faultTree, pr) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
+    
+    
+    pr.print_stats(sort='cumulative')
+    # 
+    
+    
+    
+    # values = [fault.getGlobalContext() for fault in faults]
+    
+    
+    # from matplotlib import pyplot
+    # 
+    # mVals = list(loads) + [baseLoad]
+    # pyplot.bar(range(1,len(mVals)+1),mVals)
+    # pyplot.show()
+    
+    
+    
+    
+    app = QtGui.QApplication(sys.argv)
+    mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
+    sys.exit(app.exec_())
+    

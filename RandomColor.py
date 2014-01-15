@@ -1,69 +1,72 @@
-import Tkinter as Tk
-import numpy as np
+from PySide.QtGui import *
+from PySide.QtCore import *
+import sys
+
 import colorsys
-master = Tk.Tk()
-master.title("Arranging a treemap")
+from numpy import *
 
-width, height = 900, 900
-x0,y0, xn,yn = 10, 10, 890, 890
-myCanvas = Tk.Canvas(master, width=width, height=height)
-myCanvas.pack()
 
-#decorator to attach values to a function definition
+
 def static_var(varname, value):
     def decorate(func):
-        setattr(func,varname,value)
+        setattr(func, varname, value)
         return func
     return decorate
 
-@static_var("seed", 0)
-@static_var("gcr", 0.618033988749895)
-def rand(num = 1):
-    result = []
-    for i in range(0,num):
-        rand.seed += 2/(1+np.sqrt(5))
-        rand.seed %= 1
-        result.append(rand.seed)
+
+@static_var('mods', [0])
+def randomColor(level=1):
+    def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
+
+    if level == 1:
+#         print randomColor.mods
+        randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
+    elif level > 1:
+        randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*2.0/10 * 1/level]
+#         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
+#     print randomColor.mods
+    return QColor(rgb(sum(randomColor.mods)%1,0.3,0.7))    
+
+
+
+
+
+
+class Example(QWidget):
     
-    return result
+    def __init__(self):
+        super(Example, self).__init__()
+        
+        self.setGeometry(300,300,500,500);
+        self.show()
     
     
+    def paintEvent(self,e):
+        
+        x1,x2 = 10,70
+        
+        painter = QPainter(self)
+        painter.setPen(QColor(0,0,0))
+        
+        
+        y = array(range(10,400,30))
+        
+        for y1,y2 in zip(y, y+30):
+            painter.setBrush(randomColor(1))
+            print( x1,y1,x2,y2)
+            painter.drawRect(x1,y1,x2,y2)
+            
+            for level,xOffset in enumerate(range(70,700,70)):
+                painter.setBrush(randomColor(3))
+                painter.drawRect(x1+xOffset, y1, x2+xOffset, y2)
+        painter.end()
+        
 
 
-def randomColor():
-
-    r,g,b = np.random.rand(3)
-    return '#%02X%02X%02X' % (r*255, g*255, b*255)
-
-def randomHSV():
-    
-    h,s,v = np.random.rand(3)
-    r,g,b = colorsys.hsv_to_rgb(h,s,v)
-    
-    return '#%02X%02X%02X' % (r*255, g*255, b*255)
-
-def randomRGB():
-    r,g,b = np.random.rand(3)
-    
-    return '#%02X%02X%02X' % (r*255, g*255, b*255)
-
-def hsvColor(i):
-    print i
-    h,s,v = i, 0.5,0.9
-    r,g,b = colorsys.hsv_to_rgb(h,s,v)
-    
-    return '#%02X%02X%02X' % (r*255, g*255, b*255)
+app = QApplication(sys.argv)
 
 
-
-rHeight, rWidth = 015, 50;
-
-for i in range(1,60):
-    myCanvas.create_rectangle(x0, y0+ i * rHeight, x0+rWidth, y0+rHeight * (i+1), fill = randomRGB())
+ex = Example()
 
 
-for i in range(1,60):
-    myCanvas.create_rectangle(x0 + rWidth, y0+ i * rHeight, x0+rWidth*2, y0+rHeight * (i+1), fill = randomHSV())
-    
-for i in range(1,60):
-    myCanvas.create_rectangle(x0 + rWidth*2, y0 + i * rHeight, x0+rWidth*3, y0+rHeight*(i+1), fill = hsvColor(i/60.0))
+sys.exit(app.exec_())
