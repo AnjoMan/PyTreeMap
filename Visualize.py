@@ -12,8 +12,8 @@ import sys
 from PySide import QtGui, QtCore
 
 
-file = 'cpfResults'
-# file = 'cpfResults_case30_full_3_levels'
+# file = 'cpfResults'
+file = 'cpfResults_case30_full_3_levels'
 
 
 
@@ -191,12 +191,27 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     
     #get fault position masks by element    
     maskLength = len(faults)
-    faultByElement = {element: array([False]*maskLength) for element in elList}
+#     faultByElement = {element: [False]*maskLength for element in elList}
+#     faultByElement = defaultdict
     for index, fault in enumerate(faults):
         for element in fault.elements:
             faultByElement[element][index] = True
     
-#     import pdb; pdb.set_trace()
+    
+        
+    def bool2int(x):
+            y = 0
+            for i,j in enumerate(x):
+                if j: y += 1<<i
+            return y
+    
+    def int2bool(i,n): 
+        return list((False,True)[i>>j & 1] for j in range(0,n)) 
+    
+    
+    faultByElement = {key: bool2int(value) for key,value in faultByElement.items()}
+    
+    #     import pdb; pdb.set_trace()
     log('fault indexes listed per-element')
     
     
@@ -214,21 +229,17 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
 #             for subFault in faultTree[nextLevel]:
 #                 if fault.isParentOf(subFault):
 #                     fault.addConnection(subFault)
-    
+#     
     #identify connections
     keys = sorted(faultTree.keys())
     for level in keys[0:-1]:
         print(level)
         for fault in faultTree[level]:
-            masks = [[faultByElement[element] for element in fault.elements]]+[array(maskLength*[True])]
-            mask = []
-            for mTuple in zip(*masks):
-                mask.append(all(mTuple))
-                
+            masks = [faultByElement[element] for element in fault.elements]+[[True]*maskLength]
             mask  = array([all(mTuple) for mTuple in zip(*masks)])
-            subFaults = [subFault for subFault in faults[mask] if len(subFault.elements) > level]
+            subFaults = [subFault for subFault in array(faults)[mask] if len(subFault.elements) == 1+ level]
             for subFault in subFaults:
-                fault.addConnection(mFault)
+                fault.addConnection(subFault)
             
     pr.disable()
 
