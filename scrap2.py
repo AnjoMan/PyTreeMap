@@ -5,43 +5,35 @@ from collections import defaultdict
 
 
 
-a = defaultdict(int)
+input = [True, False, False, True, True, False, True]
+values= [10,   20,    5,     8,    9,    20056, 1]
 
 
-print(a[1])
+def bool2int(x):
+        y = 0
+        for i,j in enumerate(x):
+            if j: y += 1<<i
+        return y
 
-a[1] += 3
-a[2] += 2
-a[1] += 4
-print(a)
 
-# 
-# size=20000
-# input = random.randint(0,2,size=size)
-# 
-# input = [i>0 for i in input]
-# 
-# 
-# def bool2int(x):
-#         y = 0
-#         for i,j in enumerate(x):
-#             if j: y += 1<<i
-#         return y
-# 
-# 
-# 
-# 
-# def int2bool(i,n): 
-#     return list((False,True)[i>>j & 1] for j in range(0,n)) 
-#     
-# 
-# # 
-# # interm = bool2int(input)
-# # 
-# # 
-# # 
-# # output = int2bool(interm, size)
-# 
-# 
-# cProfile.run('bool2int(input)')
-# cProfile.run('bool2int2(input)')
+
+
+def int2bool(i,n): 
+    return fromiter((False,True)[i>>j & 1] for j in range(0,n))
+    
+
+def trueIndices(i,n):
+    return (j for j in range(0,n) if i>>j & 1)
+    
+boolVal = bool2int(input)
+nVals = len(input)
+
+
+
+res = int2bool(boolVal, nVals)
+
+index = trueIndices(boolVal, nVals)
+
+
+
+mask = fromiter(res, bool, count=-1)

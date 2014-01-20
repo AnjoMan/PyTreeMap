@@ -201,8 +201,10 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     
 #     
     def int2bool(i,n): 
-        return list((False,True)[i>>j & 1] for j in range(0,n)) 
+        return fromiter( ((False,True)[i>>j & 1] for j in range(0,n) ), bool)
     
+    def trueIndices(i,n):
+        return (j for j in range(0,n) if i>>j & 1)
     
 #     faultByElement = {key: bool2int(value) for key,value in faultByElement.items()}
     
@@ -217,29 +219,33 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     pr.enable()
     
     
-#     identify connections
-    keys = sorted(faultTree.keys())
-    for level, nextLevel in zip( keys[0:-1], keys[1:]):
-        print(level)
-        for fault in faultTree[level]:
-            for subFault in faultTree[nextLevel]:
-                if fault.isParentOf(subFault):
-                    fault.addConnection(subFault)
-#     
-#     #identify connections
+# #     identify connections
 #     keys = sorted(faultTree.keys())
-#     for level in keys[0:-1]:
+#     for level, nextLevel in zip( keys[0:-1], keys[1:]):
 #         print(level)
 #         for fault in faultTree[level]:
-#             masks = [faultByElement[element] for element in fault.elements]
-#             mask = masks.pop()
-#             for el in masks:
-#                 mask = mask & el
-#             
+#             for subFault in faultTree[nextLevel]:
+#                 if fault.isParentOf(subFault):
+#                     fault.addConnection(subFault)
+#     
+#     #identify connections
+    keys = sorted(faultTree.keys())
+    
+    faultsArray=array(faults)
+    for level in keys[0:-1]:
+        print(level)
+        for fault in faultTree[level]:
+            masks = [faultByElement[element] for element in fault.elements]
+            mask = masks.pop()
+            for el in masks:
+                mask = mask & el
+            
+#             subFaults = [faults[i] for i in trueIndices(mask, maskLength) if len(faults[i].elements) == 1+level]
 #             mask  = array(int2bool(mask,maskLength))
-#             subFaults = [subFault for subFault in array(faults)[mask] if len(subFault.elements) == 1+ level]
-#             for subFault in subFaults:
-#                 fault.addConnection(subFault)
+            subFaults = [subFault for subFault in faultsArray[int2bool(mask,maskLength)] if len(subFault.elements) == 1+ level]
+#             print('stop here')
+            for subFault in subFaults:
+                fault.addConnection(subFault)
             
     pr.disable()
 
