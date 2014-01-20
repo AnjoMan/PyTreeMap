@@ -235,17 +235,19 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     for level in keys[0:-1]:
         print(level)
         for fault in faultTree[level]:
-            masks = [faultByElement[element] for element in fault.elements]
-            mask = masks.pop()
+            masks = (faultByElement[element] for element in fault.elements)
+            mask = masks.__next__()
             for el in masks:
                 mask = mask & el
             
-#             subFaults = [faults[i] for i in trueIndices(mask, maskLength) if len(faults[i].elements) == 1+level]
+            subFaults = (faults[i] for i in trueIndices(mask, maskLength) if len(faults[i].elements) == 1+level)
 #             mask  = array(int2bool(mask,maskLength))
-            subFaults = [subFault for subFault in faultsArray[int2bool(mask,maskLength)] if len(subFault.elements) == 1+ level]
+#             subFaults = [subFault for subFault in faultsArray[int2bool(mask,maskLength)] if len(subFault.elements) == 1+ level]
 #             print('stop here')
             for subFault in subFaults:
                 fault.addConnection(subFault)
+            
+            
             
     pr.disable()
 
