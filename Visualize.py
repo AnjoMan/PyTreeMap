@@ -13,8 +13,8 @@ from PySide import QtGui, QtCore
 
 
 # file = 'cpfResults'
-file = 'cpfResults_mid'
-# file ='cpfResults_med'
+# file = 'cpfResults_mid'
+file ='cpfResults_med'
 # file = 'cpfResults_case30_full_3_levels'
 
 
@@ -200,11 +200,9 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
             faultByElement[element] += 1<<index
     
 #     
-    def int2bool(i,n): 
-        return fromiter( ((False,True)[i>>j & 1] for j in range(0,n) ), bool)
+    def int2bool(i,n): return fromiter( ((False,True)[i>>j & 1] for j in range(0,n) ), bool)
     
-    def trueIndices(i,n):
-        return (j for j in range(0,n) if i>>j & 1)
+    def trueIndices(i,n): return (j for j in range(0,n) if i>>j & 1)
     
 #     faultByElement = {key: bool2int(value) for key,value in faultByElement.items()}
     
@@ -241,9 +239,6 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
                 mask = mask & el
             
             subFaults = (faults[i] for i in trueIndices(mask, maskLength) if len(faults[i].elements) == 1+level)
-#             mask  = array(int2bool(mask,maskLength))
-#             subFaults = [subFault for subFault in faultsArray[int2bool(mask,maskLength)] if len(subFault.elements) == 1+ level]
-#             print('stop here')
             for subFault in subFaults:
                 fault.addConnection(subFault)
             

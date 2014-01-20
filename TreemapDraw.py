@@ -38,13 +38,14 @@ class TreemapVis(QWidget):
         self.resize(w,h)
 #         self.move(x,y)
         
+        self.outlines = []
+        
         if faultTree!=None:
             self.build(faultTree,[10,10,900,900])
         
         
         self.widgets = []
         self.setMouseTracking(True)
-        
         self.setWindowTitle('Treemap')
         self.show()
         
@@ -60,8 +61,24 @@ class TreemapVis(QWidget):
     def addElement(self, element):
         self.elements += [element]
     
+    def addOutline(self, xa, ya, xb, yb, level):
+        self.outlines.append( ((xa,ya,xb,yb),level) )
     def paintEvent(self,e):
         super(self.__class__, self).paintEvent(e)
+        
+        painter= QPainter(self)
+        pen = QPen()
+        pen.setWidth(1)
+        pen.setBrush(Qt.black)
+        
+        painter.setPen(pen)
+        print('pen defined')
+        for (xa,ya,xb,yb), level in self.outlines:
+            painter.drawLine(xa,ya, xb,ya)
+            painter.drawLine(xb,ya,xb,yb)
+            painter.drawLine(xb,yb,xa,yb)
+            painter.drawLine(xa,yb,xa,ya)
+            
         for el in self.elements:
             el.draw(self)
 
@@ -93,6 +110,7 @@ class TreemapVis(QWidget):
                 for fault,rectangle in zip(faultList,rectangles):
                     xa,ya,xb,yb = rectangle
                     fault.addRectangle(self,[xa,ya, xb-xa, yb-ya])
+                    self.addOutline(xa,ya,xb,yb,level)
     #                 mWindow.addWidget(fault)
             else:
                 for fault, rectangle in zip(faultList, rectangles):
