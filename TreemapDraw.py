@@ -63,6 +63,7 @@ class TreemapVis(QWidget):
     
     def addOutline(self, xa, ya, xb, yb, level):
         self.outlines.append( ((xa,ya,xb,yb),level) )
+        
     def paintEvent(self,e):
         super(self.__class__, self).paintEvent(e)
         
