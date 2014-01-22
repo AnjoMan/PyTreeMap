@@ -75,6 +75,8 @@ class TreemapVis(QWidget):
         painter.setPen(pen)
         print('pen defined')
         for (xa,ya,xb,yb), level in self.outlines:
+            painter.setPen(QColor(*([15*level]*3)))
+#             print(40*level, ([40*level]*3))
             painter.drawLine(xa,ya, xb,ya)
             painter.drawLine(xb,ya,xb,yb)
             painter.drawLine(xb,yb,xa,yb)
@@ -90,7 +92,7 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print( 'Resized!')
         
-    def build(self,faultTree,square, level = 2):
+    def build(self,faultTree,square, level =2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         def subTreeValue(fault):
@@ -98,20 +100,24 @@ class TreemapVis(QWidget):
             return total
         
         def recursive_build(faultList, square, level):
-    
+            
+            mLevel = len(faultList[0].elements)
+            
             x0,y0,xn,yn = square
+            self.addOutline(x0,y0,xn,yn, mLevel)
+            
             square = [x0+1,y0+1,xn-1,yn-1]
             if len(faultList) == 0:
                 return None
             
             #lay out faults
             rectangles = layout([subTreeValue(fault) for fault in faultList], square)
-            if len(faultList[0].elements) >= level:
+            if mLevel >= level:
                 #lay out faults and add a rectangle widget to each fault
                 for fault,rectangle in zip(faultList,rectangles):
                     xa,ya,xb,yb = rectangle
                     fault.addRectangle(self,[xa,ya, xb-xa, yb-ya])
-                    self.addOutline(xa,ya,xb,yb,level)
+                    self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
                 for fault, rectangle in zip(faultList, rectangles):
@@ -142,6 +148,8 @@ class Rectangle(QWidget):
         if parent != None: self.show()
         self.fault = fault
 #         print self.fault
+        xa,ya,xb,yb = pos
+        xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
         self.setGeometry(*pos)
         self.color = QColor(200,100,100)
         self.highlight = False
@@ -174,10 +182,10 @@ class Rectangle(QWidget):
             painter.setBrush(QColor.fromHsv(h, s*0.6, 160))
         else:
             painter.setBrush(self.color)
-            
-#         painter.setBrush(self.color)
-#         painter.setBrush(Qt.NoBrush)
-        painter.drawRect(1,1,self.width()-2, self.height()-2)
+#             painter.setPen(self.color)
+#             painter.setBrush(Qt.NoBrush)
+        painter.drawRect(QRectF(1,1,self.width()-1, self.height()-1)) #rectangles are drawn so that border ends on the right side of xb, but widgets end on the left side of xb. Thus, make rectangle one smaller. (ditto for y)
+            #with Qt.NoPen, rectangle moves over and fills the space of the border, so we need to offset by 1
         painter.end()
     
     def toggleHighlight(self):

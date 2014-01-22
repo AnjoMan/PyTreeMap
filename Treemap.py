@@ -4,13 +4,16 @@ from collections import defaultdict
 import colorsys
 
 
+from PySide.QtGui import *
+from PySide.QtCore import *
+
 def randomColor():
     h,s,v = np.random.rand(3)
 #     print h,s,v
     r,g,b = colorsys.hsv_to_rgb(h, s*0.6+0.3, v*0.4+0.5)
     return '#%02X%02X%02X' % (r*255, g*255, b*255)
 
-def layColumn(values, pos):
+def layColumn(values, pos, quantize=True):
     xa, ya, xb, yb = pos
     
     dX, dY = xb-xa, yb-ya
@@ -56,6 +59,11 @@ def layColumn(values, pos):
     
     boxLengths, colWidth = save[index]['box'], save[index]['colWidth']
     
+    if quantize:
+        boxLengths = np.round(boxLengths)
+        boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths))
+    
+    colWidth = np.round(colWidth)
     #lay out box dimensions
     if dY <= dX:
         boxPositions = [ [xa    , ya + y, xa + colWidth, ya+y+dy      ] for y, dy in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
@@ -74,7 +82,7 @@ def layColumn(values, pos):
 #draw outline
 
 
-def layout(values, pos):
+def layout(values, pos, quantize=True):
     
     #filter out negative valuese
     values = [val for val in values if val > 0]
@@ -88,30 +96,84 @@ def layout(values, pos):
     rectangles = []
     nextBox = pos
     
-    
-    while len(values) > 0:
-        boxPos, values, nextBox = layColumn(values,  nextBox)
+    col = 0;
+    while len(values) > 1 if quantize else 0:
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=True)
         rectangles += boxPos
+        col += 1
+        
+#         if len(values) <2:
     
+    
+    #force last rectangle to fit in last box
+    if quantize:
+        rectangles.append(nextBox)
     return rectangles
 
 
-def main():
-    master = Tk.Tk()
-    master.title("Arranging a treemap")
 
+
+
+
+def static_var(varname, value):
+    def decorate(func):
+        setattr(func, varname, value)
+        return func
+    return decorate
+@static_var('mods', [0])
+def randomColor(level=1):
+    def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
+
+    if level == 1:
+#         print randomColor.mods
+        randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
+    elif level > 1:
+        randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
+#         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
+#     print randomColor.mods
+    return QColor(rgb(sum(randomColor.mods)%1,0.3,0.7))     
+
+
+
+class TestCanvas(QWidget):
+    def __init__(self, pos):
+        
+        super().__init__()
+        self.rectangles = []
+        self.setGeometry(*pos)
+        
+        self.show()
+        
+    def addRect(self, rect):
+        self.rectangles.append(rect)
+        
+    
+    def paintEvent(self,e):
+        
+        painter = QPainter(self)
+        
+        for rect in self.rectangles:
+            xa,ya,xb,yb = rect
+            
+            rect = xa,ya,xb-xa,yb-ya
+            painter.setBrush(randomColor())
+            painter.drawRect(QRect(*rect))
+
+
+
+
+
+def main():
+    import sys
+    app=QApplication(sys.argv)
     width, height = 900, 900
 
 
-    myCanvas = Tk.Canvas(master, width=width, height=height)
-    myCanvas.pack()
+    canvas = TestCanvas([100,100,900,900])
 
-    x0, y0, xn, yn = pos = [10,10,890,890]
+    x0, y0, xn, yn = pos = [10,10,800,800]
 
-    myCanvas.create_rectangle(x0-1,y0-1,xn+1,yn+1, fill='#AAAAAA')
-    
-    X = xn-x0
-    Y = yn-y0
+ 
 #     values = np.random.rand(20)
     values = [61.604163314943435, 294.6813017301497, 93.649276939196398, 112.70697780452326, 88.953116126775967, 97.039574700870162, 137.10143908004227, 89.092705912171823, 97.275641027366532, 58.075842761050581, 333.70787878589113, 79.082361864220388, 65.173822806601834, 61.620466443905116, 79.0610858923568, 119.15194594331513, 157.76307523648643, 83.495491052375769, 146.8211675408229, 62.277396872459576, 59.428178065922452, 67.902811582920208, -9.3029028577009285, -8.7962074508714068, 14.208160768913103, 101.8804773503449, 73.045427399512732, 64.955629666655113, 83.746037258431556, 197.25455362773596, 67.215787200178852, 64.870088543368524, 61.454496111136791, 68.981997349090875, 65.545621430207575, 87.484672267841347, 98.503136492634326, 192.05389943959915, 60.262705723778026, 60.522842879217364, 64.049680842453768]
     
@@ -120,8 +182,13 @@ def main():
     rectangles = layout(values, pos)
     
     
-    for xa,ya,xb,yb in rectangles:
-        myCanvas.create_rectangle(xa,ya,xb,yb, fill=randomColor())
+    for rect in rectangles:
+        print(rect)
+        canvas.addRect(rect)
+        
+    
+    
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":

@@ -1,53 +1,93 @@
-import cProfile
-from numpy import *
-from collections import defaultdict
+from PySide.QtCore import *
+from PySide.QtGui import *
 
 
 
+import sys
 
+class Rectangle(QWidget):
+    
+    def __init__(self,pos):
+        super().__init__()
+        
+        xa,ya,xb,yb = pos
+        
+        xb,yb = xb+1,yb+1
+        self.setGeometry(xa,ya,xb,yb)
+    
+    
+    def paintEvent(self,e):
+        
+        
+        
+        painter = QPainter(self)
+        painter.setBrush(QColor(200,100,100))
+        painter.setPen(Qt.NoPen)
+        
+        painter.drawRect(QRectF(0,0,self.width()-1, self.height()-1))
+        
+        painter.end()
+        
+    def enterEvent(self,e):
+        pos = QCursor.pos()
+        print(pos)
+        
 
-a = [1,2]
+class Example(QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        self.widgets = []
+        
+        self.addWidget(Rectangle( [200,40,100,100]))
+        self.setGeometry(100,100,400,400)
+        self.show()
+    
+    
+    def addWidget(self, widget):
+#         print 'addedWidget'
+        self.widgets += [widget]
+        widget.setParent(self)
+        widget.show()
+        self.update()
+        
+    def paintEvent(self, e):
+        
+        
+        painter = QPainter(self)
+           
+        painter.setBrush(Qt.NoBrush)
+        painter.setPen(Qt.black)
+        
+        painter.drawLine(QLineF(40,0,40,400))
+        painter.drawLine(QLineF(0,40,400,40))
+        painter.drawLine(QLineF(0,140,400,140))
+        painter.drawLine(QLineF(140,0,140,400))
+        
+        painter.drawLine(QLineF(200,0,200,400))
+        painter.drawLine(QLineF(300,0,300,400))
+        painter.setBrush(QColor(200,100,100))
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(QRectF(40,40,100,100))
+     
+        
+        
+       
+        
+        
+        
+        painter.end()
+    
 
-
-a.append([[1,2,3], ['5']])
-a.append({'corners':[1,2,3,4], 'level':2})
-
-
-
-
-
-
-# 
-# 
-# input = [True, False, False, True, True, False, True]
-# values= [10,   20,    5,     8,    9,    20056, 1]
-# 
-# 
-# def bool2int(x):
-#         y = 0
-#         for i,j in enumerate(x):
-#             if j: y += 1<<i
-#         return y
-# 
-# 
-# 
-# 
-# def int2bool(i,n): 
-#     return fromiter((False,True)[i>>j & 1] for j in range(0,n))
-#     
-# 
-# def trueIndices(i,n):
-#     return (j for j in range(0,n) if i>>j & 1)
-#     
-# boolVal = bool2int(input)
-# nVals = len(input)
-# 
-# 
-# 
-# res = int2bool(boolVal, nVals)
-# 
-# index = trueIndices(boolVal, nVals)
-# 
-# 
-# 
-# mask = fromiter(res, bool, count=-1)
+if __name__ == '__main__':
+    
+    
+    app = QApplication(sys.argv)
+    
+    
+    
+    ex = Example()
+    
+    
+    
+    sys.exit(app.exec_())
