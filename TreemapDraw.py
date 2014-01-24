@@ -73,11 +73,10 @@ class TreemapVis(QWidget):
         pen.setBrush(Qt.black)
         
         painter.setPen(pen)
-        print('pen defined')
         for (xa,ya,xb,yb), level in self.outlines:
             painter.setPen(QColor(*([15*level]*3)))
-#             print(40*level, ([40*level]*3))
             painter.drawLine(xa,ya, xb,ya)
+#             if level<2:
             painter.drawLine(xb,ya,xb,yb)
             painter.drawLine(xb,yb,xa,yb)
             painter.drawLine(xa,yb,xa,ya)
@@ -102,7 +101,6 @@ class TreemapVis(QWidget):
         def recursive_build(faultList, square, level):
             
             mLevel = len(faultList[0].elements)
-            
             x0,y0,xn,yn = square
             self.addOutline(x0,y0,xn,yn, mLevel)
             

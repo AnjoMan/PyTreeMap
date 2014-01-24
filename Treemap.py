@@ -57,19 +57,29 @@ def layColumn(values, pos, quantize=True):
     if index < ( len(save) - 1):
         values.append(a.pop())
     
+    
+    
+    #if values is empty, we need to enforce that colWidth pushes exactly to border
+
     boxLengths, colWidth = save[index]['box'], save[index]['colWidth']
     
+    if len(values)<1:
+        colWidth = dX if dY <dX else dY
+        
+        
     if quantize:
+        #'quantizing' round box and column sizes to integer values.
         boxLengths = np.round(boxLengths)
         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths))
+
+        colWidth = np.round(colWidth)
     
-    colWidth = np.round(colWidth)
     #lay out box dimensions
     if dY <= dX:
-        boxPositions = [ [xa    , ya + y, xa + colWidth, ya+y+dy      ] for y, dy in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
+        boxPositions = [ [xa    , ya + y, min(xa + colWidth, xb), min(ya+y+dy,      yb)] for y, dy in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
         nextBox = [xa + colWidth, ya, xb, yb]
     else:
-        boxPositions = [ [xa + x, ya    , xa + x + dx  , ya + colWidth] for x, dx in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
+        boxPositions = [ [xa + x, ya    , min(xa + x + dx,   xb), min(ya + colWidth,yb)] for x, dx in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
         nextBox = [xa, ya+colWidth, xb, yb]
     
     return boxPositions, values, nextBox
@@ -97,8 +107,8 @@ def layout(values, pos, quantize=True):
     nextBox = pos
     
     col = 0;
-    while len(values) > 1 if quantize else 0:
-        boxPos, values, nextBox = layColumn(values, nextBox,quantize=True)
+    while len(values) > 0:
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize)
         rectangles += boxPos
         col += 1
         
