@@ -129,12 +129,18 @@ class TreeMapFault(Fault):
     def __init__(self, listing, reduction):
         super(self.__class__, self).__init__(listing, reduction)
         self.visuals = []
+        self.rectangles = []
     
+    def toggleHighlight(self):
+        for rect in self.rectangles:
+            rect.toggleHighlight()
+        
     def addRectangle(self, mWindow, pos):
         newRectangle = Rectangle(pos, parent=mWindow, fault=self)
         newRectangle.setColor(len(self.elements))
 #         newRectangle.setFault(self)
         newRectangle.show()
+        self.rectangles.append(newRectangle)
         return newRectangle
         
     
@@ -177,7 +183,7 @@ class Rectangle(QWidget):
             r,b,g = self.color.red(), self.color.blue(), self.color.green()
             h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
             intensity = 130
-            painter.setBrush(QColor.fromHsv(h, s*0.6, 160))
+            painter.setBrush(QColor.fromHsv(h, s*0.6, 120))
         else:
             painter.setBrush(self.color)
 #             painter.setPen(self.color)

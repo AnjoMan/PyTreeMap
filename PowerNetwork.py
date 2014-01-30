@@ -129,7 +129,7 @@ class Element(QGraphicsItem,object ):
         except AttributeError: self.faults = [fault]
             
     def boundingRect(self): return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
-
+    
     
     def fitIn(self, newBox, oldBox):
         #the default fitIn behaviour is to scale whatever comes from self.getPos()
@@ -156,6 +156,13 @@ class Element(QGraphicsItem,object ):
     
     #
     def shape(self):
+        try:
+            return self.mShape
+        except:
+            self.mShape = self.defineShape()
+            return self.mShape
+        
+    def defineShape(self):
         path = QPainterPath()
         
         pos = self.getPos()
@@ -163,22 +170,44 @@ class Element(QGraphicsItem,object ):
         path.moveTo(QPointF(*pos))
         path.addEllipse( QRectF(pos[0]-radius, pos[1]-radius, 2*radius, 2*radius))
         return path
-    
+        
     def paint(self, painter, option, widget):
         mColor = Element.hColor[self.highlight]
         painter.setPen(mColor)
         painter.setBrush(mColor)
         painter.drawPath(self.shape())
+        
+        
+    def enterEvent(self, event):
+        print('in')
+        self.toggleHighlight()
+        
+        for fault in self.faults:
+            fault.toggleHighlight()
     
+    def leaveEvent(self,event):
+        print('out')
+        self.toggleHighlight()
+        
+        for fault in self.faults:
+            fault.toggleHighlight()
+        
     def mousePressEvent(self, event):
         self.highlight = not self.highlight
         print(self.highlight)
         print(str(self))
         self.update(self.boundingRect())
+        try:
+            for fault in self.faults:
+                fault.toggleHighlight()
+        except:
+            pass
+        
     
     def toggleHighlight(self):
         self.highlight = not self.highlight
         self.update(self.boundingRect())
+        
         
     def setGraph(self,graph):
         self.graph = weakref.ref(graph)
@@ -202,7 +231,7 @@ class Branch(Element):
         self.line = [self.scalePoint(point, newBox, oldBox) for point in points]
     
     
-    def shape(self):
+    def defineShape(self):
         path = QPainterPath()
         path.setFillRule(Qt.WindingFill)
         
@@ -241,7 +270,7 @@ class Bus(Element):
     color = '#408Ad2'
     
     w,h = 70,5
-    def shape(self):
+    def defineShape(self):
         x,y = self.getPos()
         path = QPainterPath()
         path.moveTo(x,y)
