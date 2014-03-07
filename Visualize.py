@@ -12,10 +12,15 @@ import sys
 from PySide import QtGui, QtCore
 
 
+
 # file = 'cpfResults'
 file = 'cpfResults_mid'
 # file ='cpfResults_med'
 # file = 'cpfResults_case30_full_3_levels'
+
+# file = 'cpfResults_case118'
+
+file = 'cpfResults_case118_small'
 
 
 
@@ -29,8 +34,6 @@ def log(string):
 import cProfile
 pr = cProfile.Profile()
 
-
-
 def compare(parentValue, childValue):
     x1,y1 = parentValue
     x2,y2 = childValue
@@ -38,16 +41,8 @@ def compare(parentValue, childValue):
 #     return np.random.rand()
 
 
-
-
-
-
 pr.enable()
-   
-   
-   
-   
-   
+
    
 #load cpf results from matlab file
 cpfResults = scipy.io.loadmat(file, struct_as_record=False)
@@ -69,7 +64,12 @@ branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
 nBranches = len(base.branch)
 nBusses = len(base.bus)
 nGens = len(base.gen)
-nTrans = len(base.trans[0])
+
+#since numpy isn't that great at loading cell arrays, we need to use try/catch to ensure we don't try to read an empty trans array
+try: 
+    nTrans = len(base.trans[0]) 
+except: 
+    nTrans = 0
 elements = defaultdict(list)
 
 
@@ -136,14 +136,18 @@ def negateY(element):
 busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
 elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
 
-branchPos = [negateY(element) for element in base.branch_geo[0]]
+# branchPos = [negateY(element) for element in base.branch_geo[0]]
+branchPos = [element for element in base.branch_geo[0]]
 elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
 
 
 genBusses = [int(el) for el in base.gen.transpose()[0]]
 
 elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
-elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
+try:
+    elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
+except:
+    pass
 
 
 
@@ -327,7 +331,7 @@ if __name__ == '__main__':
     
     
     (faults, faultTree,pr) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
-    pr.print_stats(sort='cumulative')
+#     pr.print_stats(sort='cumulative')
     
     
     
@@ -336,16 +340,16 @@ if __name__ == '__main__':
     x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
     bound = [min(x0), min(y0), max(xn), max(yn)]
     
-    [element.fitIn([0,0,880,880], bound) for element in elList]
+#     [element.fitIn([0,0,880,880], bound) for element in elList]
     
     
     app = QtGui.QApplication(sys.argv)
-    mOneline = OneLineWidget([0,0,900,900])
-    [mOneline.addElement(el) for el in elements[Bus].values()]
-    [mOneline.addElement(el) for el in elements[Branch].values()]
+#     mOneline = OneLineWidget([0,0,900,900])
+#     [mOneline.addElement(el) for el in elements[Bus].values()]
+#     [mOneline.addElement(el) for el in elements[Branch].values()]
     mTreemap = None
-    mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
-    mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+    mTreemap = TreemapVis(pos = [50,50,600,600],faultTree=faultTree)
+#     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
     sys.exit(app.exec_())
     
         

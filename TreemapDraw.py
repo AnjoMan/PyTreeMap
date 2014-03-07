@@ -91,7 +91,7 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print( 'Resized!')
         
-    def build(self,faultTree,square, level =2):
+    def build(self,faultTree,square, level =1):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         def subTreeValue(fault):
@@ -109,10 +109,23 @@ class TreemapVis(QWidget):
                 return None
             
             #lay out faults
-            rectangles = layout([subTreeValue(fault) for fault in faultList], square)
+            rectangles, leftovers = layout([subTreeValue(fault) for fault in faultList], square)
+            
+            flag = False;
+            for el in rectangles:
+                if len(el) < 1:
+                    flag = True;
+                    
+            if flag:
+                print('wait');
+            #remove elements that are not in list (eg. rejected because of quantization or because they are smaller than 1/2 pixel)
+            faultList = [el for index,el in enumerate(faultList) if index not in leftovers]
+            
             if mLevel >= level:
                 #lay out faults and add a rectangle widget to each fault
                 for fault,rectangle in zip(faultList,rectangles):
+                    if len(rectangle) == 0:
+                        print('pause')
                     xa,ya,xb,yb = rectangle
                     fault.addRectangle(self,[xa,ya, xb-xa, yb-ya])
                     self.addOutline(xa,ya,xb,yb,mLevel+1)

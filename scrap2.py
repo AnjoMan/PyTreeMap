@@ -1,9 +1,15 @@
-from pykml import parser
 
-kml_str = '<kml xmlns="http://www.opengis.net/kml/2.2">' \
-                '<Document>' \
-                    '<Folder>' \
-                        '<name>sample folder</name>' \
-                    '</Folder>' \
-                '</Document>' \
-            '</kml>'
+
+a = [1,2,3,4,5]
+
+
+def remove(a):
+    a = [el for  ind,el in enumerate(a) if ind not in [1,3]]
+    return a
+    
+    
+b = remove(a)
+
+
+print(a)
+print(b)

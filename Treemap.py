@@ -13,11 +13,16 @@ def randomColor():
     r,g,b = colorsys.hsv_to_rgb(h, s*0.6+0.3, v*0.4+0.5)
     return '#%02X%02X%02X' % (r*255, g*255, b*255)
 
-def layColumn(values, pos, quantize=True):
+def layColumn(values, pos, quantize=True, minBoxArea = 16):
     xa, ya, xb, yb = pos
     
     dX, dY = xb-xa, yb-ya
     
+    
+    if dY < 1.0 or dX < 1.0:
+        return [], values, []
+        
+        
     #colLength is the shorter dimension, boxes are lined up along this dimension
     colLength = dY if dY <= dX else dX
     #start with an empty list
@@ -27,7 +32,13 @@ def layColumn(values, pos, quantize=True):
     
     def fitValues(values, Y):
         #take a set of boxes of 
-        x = sum(values)/Y
+        
+        if Y == 0:
+            print('wait!')
+        try:
+            x = sum(values)/Y
+        except:
+            pass
         ys = np.array(values)/x
         aspect = x/ys
         return x,ys, aspect
@@ -82,6 +93,16 @@ def layColumn(values, pos, quantize=True):
         boxPositions = [ [xa + x, ya    , min(xa + x + dx,   xb), min(ya + colWidth,yb)] for x, dx in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
         nextBox = [xa, ya+colWidth, xb, yb]
     
+    areas = [(xn-x0)*(yn-y0) for x0,y0,xn,yn in boxPositions]
+    
+    if len(boxPositions) == 1:
+        print('wait')
+        
+    if max(areas) < minBoxArea:
+        while a:
+            values.append(a.pop());
+        
+        return [], values, [pos]
     return boxPositions, values, nextBox
 
 # def positionRectangles(pos, ys):
@@ -92,33 +113,50 @@ def layColumn(values, pos, quantize=True):
 #draw outline
 
 
-def layout(values, pos, quantize=True):
+def layout(values, pos, quantize=True, ):
     
     #filter out negative valuese
     values = [val for val in values if val > 0]
     
     #scale values to fill the given area
     values = np.array(values) * (pos[2]-pos[0])*(pos[3]-pos[1]) /sum(values)
-    #sort values from smallest to largest (so you can .pop() the biggest value)
-    values = sorted(list(values))
+    
+    #sort values from smallest to largest (so you can .pop() the biggest value), get indexes
+    values, origIndexes = zip( *sorted(zip(list(values), range(len(values)))))
+    
+    values, origIndexes = list(values), list(origIndexes)
    
     
     rectangles = []
     nextBox = pos
+    boxPos = pos
     
     col = 0;
-    while len(values) > 0:
-        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize)
-        rectangles += boxPos
+    
+    origIndexes_rect = []
+    
+    while len(values) > 1 and boxPos:
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 16)
+        
+        if nextBox:
+            rectangles += boxPos
+        
+        origIndexes_rect = origIndexes[-len(boxPos):] + origIndexes_rect
+        origIndexes = origIndexes[0:-len(boxPos)]
         col += 1
         
-#         if len(values) <2:
-    
+        
+        
     
     #force last rectangle to fit in last box
-    if quantize:
+    if len(values) == 1 and nextBox:
         rectangles.append(nextBox)
-    return rectangles
+        origIndexes_rect = origIndexes[-1:] + origIndexes_rect
+        origIndexes = origIndexes[0:-1]
+    
+    #re-sort rectangles according to their original ordering
+    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    return rectangles, origIndexes
 
 
 

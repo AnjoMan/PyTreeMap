@@ -178,14 +178,14 @@ class Element(QGraphicsItem,object ):
         painter.drawPath(self.shape())
         
         
-    def enterEvent(self, event):
+    def hoverEnterEvent(self, event):
         print('in')
         self.toggleHighlight()
         
         for fault in self.faults:
             fault.toggleHighlight()
     
-    def leaveEvent(self,event):
+    def hoverLeaveEvent(self,event):
         print('out')
         self.toggleHighlight()
         
@@ -423,6 +423,12 @@ class Line:
     def __init__(self, myNodes):
         self.nodesX = myNodes[0]
         self.nodesY = myNodes[1]
+        
+    def __str__(self):
+        return 'Line object'
+    
+    def __repr__(self):
+        return '<PowerNetwork.Line ['+ ', '.join([ '({0:.1f},{1:.1f})'.format(x,y) for x,y in zip(self.nodesX, self.nodesY)]) +'] object>'
     
     def draw(self,axes, color="#0000FF"):
         for index in range(0, len(self.nodesX)-1):
