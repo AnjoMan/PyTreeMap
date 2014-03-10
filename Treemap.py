@@ -7,12 +7,21 @@ import colorsys
 from PySide.QtGui import *
 from PySide.QtCore import *
 
+
+def static_var(varname, value):
+    def decorate(func):
+        setattr(func, varname, value)
+        return func
+    return decorate
+    
+
 def randomColor():
     h,s,v = np.random.rand(3)
 #     print h,s,v
     r,g,b = colorsys.hsv_to_rgb(h, s*0.6+0.3, v*0.4+0.5)
     return '#%02X%02X%02X' % (r*255, g*255, b*255)
 
+@static_var('roundingError', 0)
 def layColumn(values, pos, quantize=True, minBoxArea = 16):
     xa, ya, xb, yb = pos
     
@@ -31,7 +40,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     aspect = []
     
     def fitValues(values, Y):
-        #take a set of boxes of 
+        #take a set of values and a column (row) length, and produce the column (row) width and box height (widths)
         
         if Y == 0:
             print('wait!')
@@ -60,8 +69,6 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 #         #only keep the last two aspect ratio/box combinations
         if len(save) > 2:
             save.pop(0)
-    
-    
     #check to see which of the closest 2 columns has best aspect ratio
     minAspect, index = min(  (asp, ind) for ind, asp in enumerate(abs(1-np.array([el['aspect'] for el in save]))))
     
@@ -70,20 +77,32 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     
     
     
-    #if values is empty, we need to enforce that colWidth pushes exactly to border
 
     boxLengths, colWidth = save[index]['box'], save[index]['colWidth']
     
+    
+    #if values is empty, we need to enforce that colWidth pushes exactly to border
     if len(values)<1:
         colWidth = dX if dY <dX else dY
         
         
     if quantize:
-        #'quantizing' round box and column sizes to integer values.
-        boxLengths = np.round(boxLengths)
-        boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths))
-
-        colWidth = np.round(colWidth)
+        """ we need to quantize the treemap to integer values in order to draw
+            borders between blocks.
+            
+            When we quantize, we need to manage our rounding errors to ensure 
+            that they do not propegate - otherwise we end up with overflowing
+            boxes or a large gap at the end.
+        """
+        
+#         print("accumulated error: {}, rounding error: {}".format(layColumn.roundingError,  colWidth - np.round(colWidth)) )
+        modValue = colWidth + layColumn.roundingError #incorporate accumulated rounding error into column width
+        layColumn.roundingError += colWidth - np.round(modValue) #update accumulated error to reflect deviation from optimal colWidth
+        colWidth = np.round(modValue) #round modified column width
+        
+        boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
+        boxLengths = np.round(boxLengths) #round to integer value
+        boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
     
     #lay out box dimensions
     if dY <= dX:
@@ -95,14 +114,18 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     
     areas = [(xn-x0)*(yn-y0) for x0,y0,xn,yn in boxPositions]
     
-    if len(boxPositions) == 1:
-        print('wait')
-        
+    
+    """ Here we set a minimum box size below which we don't draw blocks. As blocks
+        in the Treemap get small (into the single-pixel dimensions e.g. 4x4),
+        the effects of rounding become large relative to the box area and we
+        prefer to replace the smallest boxes with a generic.
+    """
     if max(areas) < minBoxArea:
         while a:
             values.append(a.pop());
         
-        return [], values, [pos]
+        return [], values, pos
+# 
     return boxPositions, values, nextBox
 
 # def positionRectangles(pos, ys):
@@ -126,36 +149,40 @@ def layout(values, pos, quantize=True, ):
     
     values, origIndexes = list(values), list(origIndexes)
    
-    
+    desiredArea = sum(values);
     rectangles = []
     nextBox = pos
     boxPos = pos
     
     col = 0;
     
-    origIndexes_rect = []
     
-    while len(values) > 1 and boxPos:
-        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 16)
-        
+    origIndexes_rect = []
+        #track original indexes of values that have been laid out in the treemap
+    
+    while len(values) > 0 and boxPos:
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 0)
+            #fit the next x values into a row/column
+            
+        #
         if nextBox:
             rectangles += boxPos
         
-        origIndexes_rect = origIndexes[-len(boxPos):] + origIndexes_rect
-        origIndexes = origIndexes[0:-len(boxPos)]
-        col += 1
         
+        origIndexes_rect = origIndexes[len(origIndexes)-len(boxPos):] + origIndexes_rect
+        origIndexes = origIndexes[0:len(origIndexes)-len(boxPos)]
+        col += 1
         
         
     
     #force last rectangle to fit in last box
-    if len(values) == 1 and nextBox:
+    if nextBox:
         rectangles.append(nextBox)
-        origIndexes_rect = origIndexes[-1:] + origIndexes_rect
-        origIndexes = origIndexes[0:-1]
+        origIndexes_rect.append(len(rectangles)-1+len(values))
     
     #re-sort rectangles according to their original ordering
     origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    
     return rectangles, origIndexes
 
 
@@ -163,11 +190,21 @@ def layout(values, pos, quantize=True, ):
 
 
 
-def static_var(varname, value):
-    def decorate(func):
-        setattr(func, varname, value)
-        return func
-    return decorate
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @static_var('mods', [0])
 def randomColor(level=1):
     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
@@ -180,6 +217,15 @@ def randomColor(level=1):
 #         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
 #     print randomColor.mods
     return QColor(rgb(sum(randomColor.mods)%1,0.3,0.7))     
+
+
+
+
+
+
+
+
+
 
 
 

@@ -348,7 +348,7 @@ if __name__ == '__main__':
 #     [mOneline.addElement(el) for el in elements[Bus].values()]
 #     [mOneline.addElement(el) for el in elements[Branch].values()]
     mTreemap = None
-    mTreemap = TreemapVis(pos = [50,50,600,600],faultTree=faultTree)
+    mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
 #     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
     sys.exit(app.exec_())
     

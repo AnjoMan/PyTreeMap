@@ -3,13 +3,15 @@
 a = [1,2,3,4,5]
 
 
-def remove(a):
-    a = [el for  ind,el in enumerate(a) if ind not in [1,3]]
-    return a
-    
-    
-b = remove(a)
+move = 2;
 
 
-print(a)
-print(b)
+
+
+b = [6,7]
+print(a,b)
+
+b = a[len(a)-move:] + b
+a = a[0:len(a)-move]
+
+print(a,b)

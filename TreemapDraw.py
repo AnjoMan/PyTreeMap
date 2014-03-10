@@ -121,8 +121,16 @@ class TreemapVis(QWidget):
             #remove elements that are not in list (eg. rejected because of quantization or because they are smaller than 1/2 pixel)
             faultList = [el for index,el in enumerate(faultList) if index not in leftovers]
             
+            if len(faultList) < len(rectangles):
+            
+                xa,ya,xb,yb = rectangles[len(faultList)]
+                leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya], parent=self, color=QColor(100,100,100));
+                self.addOutline(xa,ya,xb,yb,mLevel+1)
+            
             if mLevel >= level:
                 #lay out faults and add a rectangle widget to each fault
+                
+                
                 for fault,rectangle in zip(faultList,rectangles):
                     if len(rectangle) == 0:
                         print('pause')
@@ -131,6 +139,10 @@ class TreemapVis(QWidget):
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
+                """
+                    There should be some limit here as to how small a rectangle
+                    gets recursively built.
+                """
                 for fault, rectangle in zip(faultList, rectangles):
                     randomColor(len(fault.elements))
                     recursive_build(fault.connections, rectangle, level)
@@ -159,7 +171,7 @@ class TreeMapFault(Fault):
     
 class Rectangle(QWidget):
     
-    def __init__(self, pos, parent=None, fault=None):
+    def __init__(self, pos, parent=None, fault=None, color=QColor(200,100,100)):
         
         super(self.__class__,self).__init__(parent)
         if parent != None: self.show()
@@ -168,7 +180,7 @@ class Rectangle(QWidget):
         xa,ya,xb,yb = pos
         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
         self.setGeometry(*pos)
-        self.color = QColor(200,100,100)
+        self.color = color
         self.highlight = False
 #         for element in self.fault.elements:
 #             self.enterEvent.connect(element.toggleHighlight)
@@ -178,13 +190,21 @@ class Rectangle(QWidget):
         self.color=randomColor(level)
     def enterEvent(self, e):
         self.toggleHighlight()
-        for element in self.fault.elements:
-            element.toggleHighlight()
+        try:
+            for element in self.fault.elements:
+                element.toggleHighlight()
+        except:
+            pass
+            #if the Rectangle has no associated faults (e.g. a generic filler replacing very small faults)
     
     def leaveEvent(self, e):
         self.toggleHighlight()
-        for element in self.fault.elements:
-            element.toggleHighlight()
+        try:
+            for element in self.fault.elements:
+                element.toggleHighlight()
+        except:
+            pass
+            #if the rectangle has no associated faults
 
     def paintEvent(self, e):
         
