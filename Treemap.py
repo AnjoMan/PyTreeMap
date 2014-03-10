@@ -97,9 +97,24 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         
 #         print("accumulated error: {}, rounding error: {}".format(layColumn.roundingError,  colWidth - np.round(colWidth)) )
         modValue = colWidth + layColumn.roundingError #incorporate accumulated rounding error into column width
+        
+        if modValue <2.5: 
+            """
+                If modValue < 0.5, we get divide-by-zero error and the output
+                will not make any sense. This is the hard limit on when we have
+                to substitute values with one summary block.
+                
+                Practically we limit to modValue > 2.5 because below a column
+                width of 3, there will be no box between the boundaries.
+            """
+            return [], values, pos
+            
+            
         layColumn.roundingError += colWidth - np.round(modValue) #update accumulated error to reflect deviation from optimal colWidth
         colWidth = np.round(modValue) #round modified column width
         
+        if colWidth == 0:
+            print('wait');
         boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
         boxLengths = np.round(boxLengths) #round to integer value
         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
@@ -124,7 +139,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         while a:
             values.append(a.pop());
         
-        return [], values, pos
+        return [], values, pos #returning boxPos = [] indicates that no values were laid out and nextBox should be used as a summary for small insignificant values
 # 
     return boxPositions, values, nextBox
 
@@ -161,7 +176,7 @@ def layout(values, pos, quantize=True, ):
         #track original indexes of values that have been laid out in the treemap
     
     while len(values) > 0 and boxPos:
-        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 0)
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 2)
             #fit the next x values into a row/column
             
         #
@@ -175,15 +190,17 @@ def layout(values, pos, quantize=True, ):
         
         
     
+    
+    #re-sort rectangles according to their original ordering
+    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
+    
     #force last rectangle to fit in last box
     if nextBox:
         rectangles.append(nextBox)
         origIndexes_rect.append(len(rectangles)-1+len(values))
     
-    #re-sort rectangles according to their original ordering
-    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
-    
-    return rectangles, origIndexes
+    return list(rectangles), list(origIndexes)
 
 
 
