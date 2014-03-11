@@ -193,7 +193,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     
     
     
-    
+#     
     
     #get fault position masks by element    
     maskLength = len(faults)

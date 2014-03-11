@@ -108,6 +108,7 @@ class TreemapVis(QWidget):
             if len(faultList) == 0:
                 return None
             
+            faultList = sorted(faultList, key= lambda x: x.value())
             #lay out faults
             rectangles, leftovers = layout([subTreeValue(fault) for fault in faultList], square)
             
@@ -140,12 +141,14 @@ class TreemapVis(QWidget):
                 for fault, rectangle in zip(faultList, rectangles):
                     xa,ya,xb,yb = rectangle
                     
-                    if (xb-xa)*(yb-ya) > 60*60:
+                    if (xb-xa)*(yb-ya) > 50*50:
                         randomColor(len(fault.elements))#prime random colour generator
                         recursive_build(fault.connections, rectangle, level)
                     else:
+#                         print( "{},...".format(rectangle))
                         self.addOutline(xa,ya,xb,yb,mLevel + 1)
-                        fault.addRectangle(self, [xa,ya,xb-xa,yb-ya])
+                        self.addOutline(xa+1,ya+1, xb-1, yb-1, mLevel+1)
+                        fault.addRectangle(self, [xa+1,ya+1,xb-xa-1,yb-ya-1])
         
         recursive_build(faultTree[1], square, level)
     

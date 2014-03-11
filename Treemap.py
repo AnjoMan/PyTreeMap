@@ -46,7 +46,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         except:
             pass
         ys = np.array(values)/x
-        aspect = x/ys
+        aspect = x/ys# *x/sum(x)
         return x,ys, aspect
     
     #keep the last two box elements
@@ -142,6 +142,10 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 #     return [ [x0, y0+y, x, y0+y+dy] for y, dy in zip( np.cumsum([0] + list( ys[0:-1] )), ys)]
 
 
+
+
+
+
 #draw outline
 
 
@@ -186,7 +190,10 @@ def layout(values, pos, quantize=True, ):
     
     
     #re-sort rectangles according to their original ordering
-    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    try:
+        origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    except:
+        print('wait');
     rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
     
     #add filler rectangle
