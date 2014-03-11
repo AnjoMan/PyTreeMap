@@ -27,21 +27,18 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     
     dX, dY = xb-xa, yb-ya
     
-    
     if dY < 1.0 or dX < 1.0:
         return [], values, []
-        
-        
+    
     #colLength is the shorter dimension, boxes are lined up along this dimension
     colLength = dY if dY <= dX else dX
+    
     #start with an empty list
     a =[]
-    
     aspect = []
     
     def fitValues(values, Y):
         #take a set of values and a column (row) length, and produce the column (row) width and box height (widths)
-        
         if Y == 0:
             print('wait!')
         try:
@@ -55,8 +52,6 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     #keep the last two box elements
     save = []
     while (len(save) < 1 or save[-1]['aspect'] < 1) and len(values) > 0:
-        
-            
         #take an element out of values and add it to the column
         a += [values.pop()]
         
@@ -69,16 +64,16 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 #         #only keep the last two aspect ratio/box combinations
         if len(save) > 2:
             save.pop(0)
+    
+    
     #check to see which of the closest 2 columns has best aspect ratio
     minAspect, index = min(  (asp, ind) for ind, asp in enumerate(abs(1-np.array([el['aspect'] for el in save]))))
     
     if index < ( len(save) - 1):
         values.append(a.pop())
-    
-    
-    
 
     boxLengths, colWidth = save[index]['box'], save[index]['colWidth']
+    
     
     
     #if values is empty, we need to enforce that colWidth pushes exactly to border
@@ -95,7 +90,6 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
             boxes or a large gap at the end.
         """
         
-#         print("accumulated error: {}, rounding error: {}".format(layColumn.roundingError,  colWidth - np.round(colWidth)) )
         modValue = colWidth + layColumn.roundingError #incorporate accumulated rounding error into column width
         
         if modValue <2.5: 
@@ -108,13 +102,10 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
                 width of 3, there will be no box between the boundaries.
             """
             return [], values, pos
-            
-            
+        
         layColumn.roundingError += colWidth - np.round(modValue) #update accumulated error to reflect deviation from optimal colWidth
         colWidth = np.round(modValue) #round modified column width
         
-        if colWidth == 0:
-            print('wait');
         boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
         boxLengths = np.round(boxLengths) #round to integer value
         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
@@ -127,14 +118,17 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         boxPositions = [ [xa + x, ya    , min(xa + x + dx,   xb), min(ya + colWidth,yb)] for x, dx in zip(np.cumsum( [0] + list(boxLengths[0:-1])), boxLengths) ]
         nextBox = [xa, ya+colWidth, xb, yb]
     
-    areas = [(xn-x0)*(yn-y0) for x0,y0,xn,yn in boxPositions]
+    
     
     
     """ Here we set a minimum box size below which we don't draw blocks. As blocks
         in the Treemap get small (into the single-pixel dimensions e.g. 4x4),
-        the effects of rounding become large relative to the box area and we
+        the effects of rounding error become large relative to the box area and we
         prefer to replace the smallest boxes with a generic.
+        
     """
+    
+    areas = [(xn-x0)*(yn-y0) for x0,y0,xn,yn in boxPositions]
     if max(areas) < minBoxArea:
         while a:
             values.append(a.pop());
@@ -195,8 +189,8 @@ def layout(values, pos, quantize=True, ):
     origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
     rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
     
-    #force last rectangle to fit in last box
-    if nextBox:
+    #add filler rectangle
+    if nextBox and not boxPos:
         rectangles.append(nextBox)
         origIndexes_rect.append(len(rectangles)-1+len(values))
     

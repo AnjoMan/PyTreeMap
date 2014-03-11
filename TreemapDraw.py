@@ -140,7 +140,7 @@ class TreemapVis(QWidget):
                 for fault, rectangle in zip(faultList, rectangles):
                     xa,ya,xb,yb = rectangle
                     
-                    if (xb-xa)*(yb-ya) > 100*100:
+                    if (xb-xa)*(yb-ya) > 60*60:
                         randomColor(len(fault.elements))#prime random colour generator
                         recursive_build(fault.connections, rectangle, level)
                     else:
