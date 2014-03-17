@@ -18,9 +18,11 @@ file = 'cpfResults_mid'
 # file ='cpfResults_med'
 # file = 'cpfResults_case30_full_3_levels'
 
-file = 'cpfResults_case118'
-
+# file = 'cpfResults_case118'
+# 
 # file = 'cpfResults_case118_small'
+# file = 'cpfResults_case118_full_1level'
+# file = 'cpfResults_case118_1level'
 
 
 
@@ -181,6 +183,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     log('faults created')
     
     
+    
     faultTree = defaultdict(list)
     #sort faults by number of element in each
     for fault in faults:
@@ -265,6 +268,26 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
         
     
     log('limits found')
+    
+    
+    #normalize secondaries
+    def normalize(x):
+        x = array(x)
+        x = x - min(x)
+        x = x / max(x)
+        return x
+        
+    secondaryValues = [fault.secondary() for fault in faults]
+    secondaryValues = normalize(secondaryValues)
+    for value, fault in zip(secondaryValues, faults):
+        fault.secondaryValue = value;
+    
+    secondaryValues = [fault.secondary() for fault in faults]
+    
+    log("normalized secondary values")
+    
+    
+
     return faults, faultTree, pr
 
     p.join()
@@ -344,12 +367,12 @@ if __name__ == '__main__':
     
     
     app = QtGui.QApplication(sys.argv)
-#     mOneline = OneLineWidget([0,0,900,900])
-#     [mOneline.addElement(el) for el in elements[Bus].values()]
-#     [mOneline.addElement(el) for el in elements[Branch].values()]
+    mOneline = OneLineWidget([0,0,900,900])
+    [mOneline.addElement(el) for el in elements[Bus].values()]
+    [mOneline.addElement(el) for el in elements[Branch].values()]
     mTreemap = None
     mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
-#     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+    mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
     sys.exit(app.exec_())
     
         

@@ -218,10 +218,9 @@ class Branch(Element):
     def __init__(self,id,line):
         self.line = line
         super(self.__class__, self).__init__(id, [None,None])
-        
-    def secondary(self):
-        return Line(self.pos).getPosition()
     
+    def getPos(self):
+        return Line(self.line).getPosition()
     def boundingRect(self):
         x,y = array(self.line).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
@@ -298,6 +297,7 @@ class Transformer(Element):
     def getPos(self):
         pos = [el.getPos() for el in self.elements]
         return mean(a,0)
+    
     
     def boundingRect(self):
         rects = [list(el.boundingRect().getRect()) for el in self.elements]
@@ -399,6 +399,28 @@ class Fault(object):
             
     def value(self):
         return self.reduction
+    
+    def secondary(self):
+        try:
+            return self.secondaryValue
+        except:
+          
+            if len(self.elements) == 1:
+                self.secondaryValue = 0;
+                return self.secondaryValue
+            
+            positions = [el.getPos() for el in self.elements]
+            
+            
+            import itertools
+            def dist_two_points(x,y):
+                return sqrt( (x[1]-x[0])**2 + (y[1]-y[0])**2)
+                
+            combos = itertools.combinations( range(0,len(positions)), 2)
+            distances = [ dist_two_points(positions[i],positions[j]) for i,j in combos]
+            
+            self.secondaryValue = mean(distances)
+            return self.secondaryValue
     
     def subTreeValue(self): return self.value() + sum([subFault.subTreeValue() for subFault in self.connections])
     

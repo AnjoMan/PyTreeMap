@@ -1,17 +1,26 @@
-
-
-a = [1,2,3,4,5]
-
-
-move = 2;
+from numpy import *
+import random
+import matplotlib.pyplot as plt
 
 
 
+numbers =[random.randint(-3, 10) for i in range(0,40)]
 
-b = [6,7]
-print(a,b)
+print(numbers)
 
-b = a[len(a)-move:] + b
-a = a[0:len(a)-move]
 
-print(a,b)
+
+plt.scatter(range(0,len(numbers)),numbers)
+
+def normalize(x):
+    x = array(x)
+    x = x - min(x)
+    x = x / max(x)
+    return x
+
+newNumbers = normalize(numbers)
+
+plt.scatter(range(0,len(numbers)), newNumbers, color = 'red')
+
+
+plt.show()
