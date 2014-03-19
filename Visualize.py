@@ -13,8 +13,8 @@ from PySide import QtGui, QtCore
 
 
 
-# file = 'cpfResults'
-file = 'cpfResults_mid'
+file = 'cpfResults'
+# file = 'cpfResults_mid'
 # file ='cpfResults_med'
 # file = 'cpfResults_case30_full_3_levels'
 
@@ -180,7 +180,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     
     faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(CPFbranches, CPF_loads) if (baseLoad-load)/baseLoad > filter]
 
-    log('faults created')
+    log('faults created - {}'.format(len(faults)))
     
     
     
@@ -282,7 +282,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     for value, fault in zip(secondaryValues, faults):
         fault.secondaryValue = value;
     
-    secondaryValues = [fault.secondary() for fault in faults]
+#     secondaryValues = [fault.secondary() for fault in faults]
     
     log("normalized secondary values")
     

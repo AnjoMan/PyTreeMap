@@ -1,26 +1,5 @@
 from numpy import *
-import random
-import matplotlib.pyplot as plt
 
+mLine = [[30.117171717171715, 380.95649072753201], [30.117171717171715, 398.07489300998566], [92.612121212121224, 509.34450784593434], [92.068686868686854, 524.75106990014262]];
 
-
-numbers =[random.randint(-3, 10) for i in range(0,40)]
-
-print(numbers)
-
-
-
-plt.scatter(range(0,len(numbers)),numbers)
-
-def normalize(x):
-    x = array(x)
-    x = x - min(x)
-    x = x / max(x)
-    return x
-
-newNumbers = normalize(numbers)
-
-plt.scatter(range(0,len(numbers)), newNumbers, color = 'red')
-
-
-plt.show()
+print(mLine)

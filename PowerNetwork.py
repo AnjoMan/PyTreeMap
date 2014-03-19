@@ -215,19 +215,16 @@ class Element(QGraphicsItem,object ):
 class Branch(Element):
     color = '#DB0058'
     radius = 1
-    def __init__(self,id,line):
-        self.line = line
-        super(self.__class__, self).__init__(id, [None,None])
     
     def getPos(self):
-        return Line(self.line).getPosition()
+        return Line(array(self.pos).transpose()).getPosition()
     def boundingRect(self):
-        x,y = array(self.line).transpose()
+        x,y = array(self.pos).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
     
     def fitIn(self, newBox, oldBox):
-        points = self.line
-        self.line = [self.scalePoint(point, newBox, oldBox) for point in points]
+        points = self.pos
+        self.pos = [self.scalePoint(point, newBox, oldBox) for point in points]
     
     
     def defineShape(self):
@@ -237,7 +234,7 @@ class Branch(Element):
         radius =  Branch.radius
         rotation = array( [[0,-1],[1,0]])
         
-        points = zip(self.line[0:-1], self.line[1:])
+        points = zip(self.pos[0:-1], self.pos[1:])
         
         for p0, pn in points:
             (x0,y0),(xn,yn) = p0,pn
@@ -402,25 +399,28 @@ class Fault(object):
     
     def secondary(self):
         try:
-            return self.secondaryValue
-        except:
-          
-            if len(self.elements) == 1:
-                self.secondaryValue = 0;
+            try:
                 return self.secondaryValue
-            
-            positions = [el.getPos() for el in self.elements]
-            
-            
-            import itertools
-            def dist_two_points(x,y):
-                return sqrt( (x[1]-x[0])**2 + (y[1]-y[0])**2)
+            except:
                 
-            combos = itertools.combinations( range(0,len(positions)), 2)
-            distances = [ dist_two_points(positions[i],positions[j]) for i,j in combos]
-            
-            self.secondaryValue = mean(distances)
-            return self.secondaryValue
+                if len(self.elements) == 1:
+                    self.secondaryValue = 0;
+                    return self.secondaryValue
+                
+                positions = [el.getPos() for el in self.elements]
+                
+                
+                import itertools
+                def dist_two_points(a,b):
+                    return sqrt( (b[0]-a[0])**2 + (b[1]-a[1])**2)
+                    
+                combos = itertools.combinations( range(0,len(positions)), 2)
+                distances = [ dist_two_points(positions[i],positions[j]) for i,j in combos]
+                
+                self.secondaryValue = mean(distances)
+                return self.secondaryValue
+        except: 
+            return None
     
     def subTreeValue(self): return self.value() + sum([subFault.subTreeValue() for subFault in self.connections])
     

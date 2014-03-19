@@ -26,10 +26,10 @@ def randomColor(level=1, secondary = None):
 #     print randomColor.mods
     
     h = sum(randomColor.mods) %1
-    
     if secondary:
-        s = -secondary * 0.5 + 0.3
-        v = secondary * 0.5 + 0.3
+        
+        s = (secondary) * 0.4 + 0.3
+        v = (secondary) * 0.5 + 0.4
     else:
         s = 0.3
         v = 0.7
@@ -100,7 +100,7 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print( 'Resized!')
         
-    def build(self,faultTree,square, level =1):
+    def build(self,faultTree,square, level =2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         def subTreeValue(fault):
@@ -143,7 +143,7 @@ class TreemapVis(QWidget):
                     if len(rectangle) == 0:
                         print('pause')
                     xa,ya,xb,yb = rectangle
-                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], secondary = fault.secondary())
+                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya])
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
@@ -162,7 +162,7 @@ class TreemapVis(QWidget):
                         self.addOutline(xa,ya,xb,yb,mLevel + 1)
 #                         fault.addRectangle(self, [xa, ya, xb-xa, yb-ya])
                         self.addOutline(xa+1,ya+1, xb-1, yb-1, mLevel+2)
-                        fault.addRectangle(self, [xa+1,ya+1,xb-xa-2,yb-ya-2], secondary = self.secondary)
+                        fault.addRectangle(self, [xa+1,ya+1,xb-xa-2,yb-ya-2])
         
         recursive_build(faultTree[1], square, level)
     
@@ -180,7 +180,7 @@ class TreeMapFault(Fault):
     def addRectangle(self, mWindow, pos):
         newRectangle = Rectangle(pos, parent=mWindow, fault=self)
         newRectangle.setColor(len(self.elements))
-#         newRectangle.setFault(self)
+        newRectangle.setFault(self)
         newRectangle.show()
         self.rectangles.append(newRectangle)
         return newRectangle
@@ -209,7 +209,7 @@ class Rectangle(QWidget):
     
     def setColor(self,level):
         
-        self.color=randomColor(level, self.secondary)
+        self.color=randomColor(level, secondary=self.fault.secondary())
     def enterEvent(self, e):
         self.toggleHighlight()
         try:
