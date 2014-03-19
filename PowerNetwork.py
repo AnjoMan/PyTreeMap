@@ -402,7 +402,6 @@ class Fault(object):
             try:
                 return self.secondaryValue
             except:
-                
                 if len(self.elements) == 1:
                     self.secondaryValue = 0;
                     return self.secondaryValue

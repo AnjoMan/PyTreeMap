@@ -29,7 +29,7 @@ def randomColor(level=1, secondary = None):
     if secondary:
         
         s = (secondary) * 0.4 + 0.3
-        v = (secondary) * 0.5 + 0.4
+        v = (secondary**2) * 0.3 + 0.7
     else:
         s = 0.3
         v = 0.7

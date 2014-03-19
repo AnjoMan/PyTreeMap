@@ -13,12 +13,12 @@ from PySide import QtGui, QtCore
 
 
 
-file = 'cpfResults'
-# file = 'cpfResults_mid'
+# file = 'cpfResults'
+file = 'cpfResults_mid'
 # file ='cpfResults_med'
 # file = 'cpfResults_case30_full_3_levels'
 
-# file = 'cpfResults_case118'
+file = 'cpfResults_case118'
 # 
 # file = 'cpfResults_case118_small'
 # file = 'cpfResults_case118_full_1level'
