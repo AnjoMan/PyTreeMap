@@ -28,8 +28,8 @@ def randomColor(level=1, secondary = None):
     h = sum(randomColor.mods) %1
     if secondary:
         
-        s = (secondary) * 0.4 + 0.3
-        v = (secondary**2) * 0.3 + 0.7
+        s = (secondary**(1/2)) * 0.4 + 0.2
+        v = (secondary**(1/2)) * 0.6 + 0.4
     else:
         s = 0.3
         v = 0.7
@@ -237,8 +237,8 @@ class Rectangle(QWidget):
         if self.highlight:
             r,b,g = self.color.red(), self.color.blue(), self.color.green()
             h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
-            intensity = 130
-            painter.setBrush(QColor.fromHsv(h, s*0.6, 120))
+            intensity = 100
+            painter.setBrush(QColor.fromHsv(h, s*0.6, intensity))
         else:
             painter.setBrush(self.color)
 #             painter.setPen(self.color)

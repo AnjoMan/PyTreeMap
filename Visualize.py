@@ -11,21 +11,26 @@ from TreemapDraw import *
 import sys
 from PySide import QtGui, QtCore
 
+## sample files for Tree
 
+file = 'cpfResults'
 
-# file = 'cpfResults'
-file = 'cpfResults_mid'
+## sample files for Treemap
+# file = 'cpfResults_mid'
 # file ='cpfResults_med'
+file = 'cpfResults_case30_2level'
 # file = 'cpfResults_case30_full_3_levels'
 
-file = 'cpfResults_case118'
+# file = 'cpfResults_case118'
 # 
 # file = 'cpfResults_case118_small'
 # file = 'cpfResults_case118_full_1level'
 # file = 'cpfResults_case118_1level'
+# file = 'cpfResults_case118_2level'
 
 
 
+depth = 2
 
 print("\n\n\n")
 def log(string):
@@ -381,7 +386,7 @@ if __name__ == '__main__':
     
     
     
-    
+#     
 #     (faults, faultTree, pr) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
 #     
 #     pr.print_stats(sort='cumulative')

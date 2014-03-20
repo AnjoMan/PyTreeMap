@@ -68,7 +68,8 @@ class OneLine(QGraphicsView):
         
 #         self.setGeometry(*shape)
         scene = QGraphicsScene(self)
-        scene.setSceneRect(10,10,shape[2]-20, shape[3]-20)
+#         scene.setSceneRect(10,10,shape[2]-20, shape[3]-20)
+        scene.setSceneRect(0,0,1200,800)
         self.setScene(scene)
         self.setCacheMode(QGraphicsView.CacheBackground)
         self.setRenderHint(QPainter.Antialiasing)
