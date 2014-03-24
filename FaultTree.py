@@ -95,11 +95,7 @@ class TreeVis(QtGui.QWidget):
                 fault.setPos((width/2,y))
                 fault.setLevel(levelNo)
                 self.draw(fault)
-                continue
-            
-            level = sorted(level, key= lambda mFault: mFault.value())
-            
-            if len(level) == 2: #case where exactly two faults are present and we want to add spacing outside
+            elif len(level) == 2: #case where exactly two faults are present and we want to add spacing outside
                 level[0].radius, level[1].radius = (30,20) if level[0].getLevelContext() > level[1].getLevelContext() else (20,30)
                 level[0].setPos( (width * 0.30+ level[0].getRadius(), y))
                 level[1].setPos( (width - width*0.30 - level[1].getRadius(), y))
@@ -107,8 +103,6 @@ class TreeVis(QtGui.QWidget):
                 level[1].setLevel(levelNo)
                 self.draw(level[0])
                 self.draw(level[1])
-                continue
-            
             else:
                 x,_ = sideGap, _ = hspacing(len(level), width) # this is a little bogus since I only want 'sideGap'
                 space = width-2*sideGap
@@ -117,15 +111,16 @@ class TreeVis(QtGui.QWidget):
                 
                 #first try to set sizes for XX% coverage
                 scale = (space *0.80)/sum(sizes)
-                gap = (space*0.20)/(len(sizes)-1)
+                gap = (space*0.20)/(len(sizes)) #change this divisor to change spacing
                 radii = [size*scale / 2.0 for size in sizes]
                 
                 mMax =  max(radii)
                 #if some are too big, scale them all down and increase the gap size
                 if mMax > 30:
                     radii = [radius * 30 /mMax for radius in radii]
-                    gap = (space - sum(radii)*2) / (len(radii)-1)
+                    gap = (space - sum(radii)*2) / (len(radii))#change this divisor to change spacing
                 
+                x+= gap/2
 #                 for radius, fault in zip(radii, sorted(level, key= lambda mFault: mFault.value())) :
                 for radius, fault in zip(radii, level):
                     fault.radius = radius
@@ -270,8 +265,8 @@ class TreeFault(Fault):
         
         for other in self.connections:
             
-            weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
-#             weight=1
+#             weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
+            weight=1
             
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()

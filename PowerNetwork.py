@@ -244,7 +244,11 @@ class Branch(Element):
             dV = array([dx,dy])
             mag_dV = linalg.norm(dV)
             
+            if mag_dV == 0:
+                break;
+           
             v = dot(rotation, dV) * radius / mag_dV
+            
             startAngle = arctan2(*v) * 180/pi + 90
             
             path.moveTo(QPointF(*p0-v))

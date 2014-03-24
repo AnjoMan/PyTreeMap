@@ -13,12 +13,12 @@ from PySide import QtGui, QtCore
 
 ## sample files for Tree
 
-file = 'cpfResults'
+file = 'cpfResults_treemap'
 
 ## sample files for Treemap
 # file = 'cpfResults_mid'
 # file ='cpfResults_med'
-file = 'cpfResults_case30_2level'
+# file = 'cpfResults_case30_2level'
 # file = 'cpfResults_case30_full_3_levels'
 
 # file = 'cpfResults_case118'
@@ -183,8 +183,8 @@ CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
 def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     #get faults
     
-    faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(CPFbranches, CPF_loads) if (baseLoad-load)/baseLoad > filter]
-
+    faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(CPFbranches, CPF_loads) if (baseLoad-load)/baseLoad > filter/100]
+    
     log('faults created - {}'.format(len(faults)))
     
     
@@ -389,7 +389,7 @@ if __name__ == '__main__':
 #     
 #     (faults, faultTree, pr) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
 #     
-#     pr.print_stats(sort='cumulative')
+# #     pr.print_stats(sort='cumulative')
 #     # 
 #     
 #     

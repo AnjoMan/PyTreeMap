@@ -26,6 +26,7 @@ def randomColor(level=1, secondary = None):
 #     print randomColor.mods
     
     h = sum(randomColor.mods) %1
+    h = randomColor.mods[0]%1
     if secondary:
         
         s = (secondary**(1/2)) * 0.4 + 0.2
