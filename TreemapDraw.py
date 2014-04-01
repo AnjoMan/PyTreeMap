@@ -29,7 +29,7 @@ def randomColor(level=1, secondary = None):
     h = randomColor.mods[0]%1
     
     
-    secondary=None
+#     secondary=None
     if secondary:
         
         s = (secondary**(1/2)) * 0.4 + 0.2

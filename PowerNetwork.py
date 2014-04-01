@@ -2,6 +2,9 @@ from numpy import *
 from matplotlib import pyplot as plt
 from collections import defaultdict
 import weakref
+
+
+import DistanceCalculations as DC
 from PySide.QtGui import *
 from PySide.QtCore import *
 import sys
@@ -212,13 +215,16 @@ class Element(QGraphicsItem,object ):
         
     def setGraph(self,graph):
         self.graph = weakref.ref(graph)
+    
+    def distanceFrom(self, other):
+        return sqrt(self.getPos()**2 + other.getPos()**2)
 
 class Branch(Element):
     color = '#DB0058'
     radius = 1
     
-    def getPos(self):
-        return Line(array(self.pos).transpose()).getPosition()
+#     def getPos(self):
+#         return Line(array(self.pos).transpose()).getPosition()
     def boundingRect(self):
         x,y = array(self.pos).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
@@ -266,6 +272,16 @@ class Branch(Element):
         path.addEllipse(QRectF(xn-radius, yn-radius, 2*radius, 2*radius))
         
         return path.simplified()
+    
+    def distanceFrom(self,other):
+        if type(other) is Transformer: #if transformer, return the smallest distance from all elements in the transformer.
+            return other.distanceFrom(self)
+        elif type(other) is Branch: #if the other is a line, 
+            return DC.lineToLine(self.pos, other.pos)[0]
+        else:
+            return DC.pointToLine(self.pos, other.getPos())[0]
+            
+        
         
 class Bus(Element): 
     color = '#408Ad2'
@@ -277,6 +293,13 @@ class Bus(Element):
         path.moveTo(x,y)
         path.addRect(QRectF(x-Bus.w/2, y-Bus.h/2, Bus.w, Bus.h))
         return path
+    
+    def distanceFrom(self, other):
+        if type(other) is not type(self):
+            return other.distanceFrom(self)
+        else: 
+            return DC.pointToPoint(self.getPos(), other.getPos())
+        
 
 class Gen(Element):
     color = '#FF9700'
@@ -286,6 +309,9 @@ class Gen(Element):
     
     def getPos(self):
         return self.bus.getPos()
+    
+    def distanceFrom(self, other):
+        return other.distanceFrom(self.bus)
 
 class Transformer(Element):
     color = '#80E800'
@@ -309,6 +335,19 @@ class Transformer(Element):
     
     def fitIn(self, *args):
         pass
+    
+    def distanceFrom(self,other):
+        if type(other) == type(self):
+            distances = []
+            for EL in self.elements:
+                for el in other.elements:
+                    distances.append(EL.distanceFrom(el))
+            return min(distances)
+        else:
+            return min([el.distanceFrom(other)[0] for el in self.elements])
+        
+                
+                
     
 class Fault(object):
     levelContext = defaultdict(list)
@@ -407,19 +446,14 @@ class Fault(object):
             try:
                 return self.secondaryValue
             except:
+                
                 if len(self.elements) == 1:
                     self.secondaryValue = 0;
                     return self.secondaryValue
                 
-                positions = [el.getPos() for el in self.elements]
-                
-                
                 import itertools
-                def dist_two_points(a,b):
-                    return sqrt( (b[0]-a[0])**2 + (b[1]-a[1])**2)
-                    
-                combos = itertools.combinations( range(0,len(positions)), 2)
-                distances = [ dist_two_points(positions[i],positions[j]) for i,j in combos]
+                combos = itertools.combinations( range(0,len(self.elements)), 2)
+                distances = [ self.elements[i].distanceFrom(self.elements[j]) for i,j in combos]
                 
                 self.secondaryValue = mean(distances)
                 return self.secondaryValue
