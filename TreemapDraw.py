@@ -27,6 +27,9 @@ def randomColor(level=1, secondary = None):
     
     h = sum(randomColor.mods) %1
     h = randomColor.mods[0]%1
+    
+    
+    secondary=None
     if secondary:
         
         s = (secondary**(1/2)) * 0.4 + 0.2
@@ -101,14 +104,14 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print( 'Resized!')
         
-    def build(self,faultTree,square, level =2):
+    def build(self,faultTree,square, depthLimit =2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         def subTreeValue(fault):
             total=fault.value() + sum([subTreeValue(subFault) for subFault in fault.connections])
             return total
         
-        def recursive_build(faultList, square, level):
+        def recursive_build(faultList, square, mLevel):
             
             try:
                 mLevel = len(faultList[0].elements)
@@ -136,7 +139,7 @@ class TreemapVis(QWidget):
                 leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya], parent=self, color=QColor(150,150,150));
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
-            if mLevel >= level:
+            if mLevel >= depthLimit:
                 #lay out faults and add a rectangle widget to each fault
                 
                 
@@ -144,7 +147,7 @@ class TreemapVis(QWidget):
                     if len(rectangle) == 0:
                         print('pause')
                     xa,ya,xb,yb = rectangle
-                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya])
+                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], level=mLevel-startLevel+1)
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
@@ -156,8 +159,8 @@ class TreemapVis(QWidget):
                     xa,ya,xb,yb = rectangle
                     
                     if (xb-xa)*(yb-ya) > 50*50 and fault.connections:
-                        randomColor(len(fault.elements))#prime random colour generator
-                        recursive_build(fault.connections, rectangle, level)
+                        randomColor(mLevel-startLevel+1)#prime random colour generator
+                        recursive_build(fault.connections, rectangle, mLevel+1)
                     else:
 #                         print( "{},...".format(rectangle))
                         self.addOutline(xa,ya,xb,yb,mLevel + 1)
@@ -165,7 +168,8 @@ class TreemapVis(QWidget):
                         self.addOutline(xa+1,ya+1, xb-1, yb-1, mLevel+2)
                         fault.addRectangle(self, [xa+1,ya+1,xb-xa-2,yb-ya-2])
         
-        recursive_build(faultTree[1], square, level)
+        startLevel = 1
+        recursive_build(faultTree[startLevel], square, startLevel)
     
 class TreeMapFault(Fault):
     
@@ -178,8 +182,9 @@ class TreeMapFault(Fault):
         for rect in self.rectangles:
             rect.toggleHighlight()
         
-    def addRectangle(self, mWindow, pos):
+    def addRectangle(self, mWindow, pos, level=None):
         newRectangle = Rectangle(pos, parent=mWindow, fault=self)
+#         newRectangle.setColor(level if level else len(self.elements))
         newRectangle.setColor(len(self.elements))
         newRectangle.setFault(self)
         newRectangle.show()
@@ -198,10 +203,7 @@ class Rectangle(QWidget):
 #         print self.fault
         xa,ya,xb,yb = pos
         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
-        try:
-            self.setGeometry(*pos)
-        except:
-            print('wait');
+        self.setGeometry(*pos)
         self.color = color
         self.highlight = False
 #         for element in self.fault.elements:
@@ -238,7 +240,7 @@ class Rectangle(QWidget):
         if self.highlight:
             r,b,g = self.color.red(), self.color.blue(), self.color.green()
             h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
-            intensity = 100
+            intensity = 80
             painter.setBrush(QColor.fromHsv(h, s*0.6, intensity))
         else:
             painter.setBrush(self.color)

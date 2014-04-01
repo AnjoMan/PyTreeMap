@@ -282,6 +282,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
         x = x / max(x)
         return x
         
+    #initialize and get secondary values for all faults.
     secondaryValues = [fault.secondary() for fault in faults]
     secondaryValues = normalize(secondaryValues)
     for value, fault in zip(secondaryValues, faults):

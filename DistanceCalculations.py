@@ -7,19 +7,38 @@ L1 = [ [1,1],
       [10,17],
       [20,17]]
 
+L2 = [ [10,1],
+       [12,1],
+       [14,10],
+       [18,15],
+       [22,15]]
 
 p1 = [1,1]
 p2 = [10, 15]
-p3 = [8,2]
+p3 = [15,14]
 
 
 for point in L1:
-    plt.scatter(L1)
+    plt.scatter(*point,c='r')
+
+for (ax,ay), (bx,by) in zip(L1[0:-1], L1[1:]):
+    plt.plot( [ax,bx],[ay,by], 'b')
+    
+
+plt.scatter(*p3)
+
+
+
+for point in L2:
+    plt.scatter(*point, c='r')
+
+for (ax,ay), (bx,by) in zip(L2[0:-1], L2[1:]):
+    plt.plot( [ax,bx],[ay,by], 'b')
 
 plt.show()
 
 
-def pointToLine(p1,p2,p3):
+def pointToSegment(p1,p2,p3):
     p1,p2,p3 = [array(pt) for pt in [p1,p2,p3]]
     
     num = dot(p3-p1,p2-p1)
@@ -36,7 +55,7 @@ def pointToLine(p1,p2,p3):
         return linalg.norm(p3-p)
     
     
-def lineToLine(L1, L2):
+def segToSeg(L1, L2):
     p1,p2 = [array(el) for el in L1]
     p3,p4 = [array(el) for el in L2]
     
@@ -46,13 +65,16 @@ def lineToLine(L1, L2):
 
 
 
-def pointToCompoundLine(L,P):
+def pointToLine(L,P):
     Pa = L[0:-1]
     Pb = L[1:]
     
-    distances = [pointToLine(pa,pb,P) for pa,pb in zip(Pa,Pb)]
+    distances = [pointToSegment(pa,pb,P) for pa,pb in zip(Pa,Pb)]
     return min(distances)
+
+def lineToLine(L1,L2):
+    distances = [pointToLine(L1, p) for p in L2] + [pointToLine(L2,p) for p in L1]
+    return(min(distances))
     
-    
-out = pointToCompoundLine(L1,p3)
+out = lineToLine(L1,L2)
     
