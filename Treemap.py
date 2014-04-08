@@ -107,6 +107,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         colWidth = np.round(modValue) #round modified column width
         
         boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
+#         boxLengths = boxLengths - layColumn.roundingError * colLength / len(boxLengths)
         boxLengths = np.round(boxLengths) #round to integer value
         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
     
@@ -151,11 +152,14 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 
 def layout(values, pos, quantize=True, ):
     
-    #filter out negative valuese
-    values = [val for val in values if val > 0]
+    #filter out negative values
+#     posValues = [val for val in values if val > 0]
+    
+    nValues = len(values)
+    
     
     #scale values to fill the given area
-    values = np.array(values) * (pos[2]-pos[0])*(pos[3]-pos[1]) /sum(values)
+    values = np.array(values) * (pos[2]-pos[0])*(pos[3]-pos[1]) /sum([val for val in values if val > 0])
     
     #sort values from smallest to largest (so you can .pop() the biggest value), get indexes
     values, origIndexes = zip( *sorted(zip(list(values), range(len(values)))))
@@ -179,7 +183,7 @@ def layout(values, pos, quantize=True, ):
             
         #
         if nextBox:
-            rectangles += boxPos
+            rectangles = boxPos + rectangles
         
         
         origIndexes_rect = origIndexes[len(origIndexes)-len(boxPos):] + origIndexes_rect
@@ -188,12 +192,19 @@ def layout(values, pos, quantize=True, ):
         
         
     
+#     if len(values) > 1: #we need to do a fill box
+#         
+    #pad 'rectangles' with empty arrays.
+#     rectangles = rectangles + [[]]*(nValues - len(rectangles))
+    
+    if len(origIndexes) > 0:
+        print('wait')
+    #transfer over original indexes
+#     origIndexes_rect = origIndexes + origIndexes_rect;
     
     #re-sort rectangles according to their original ordering
-    try:
-        origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
-    except:
-        print('wait');
+    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    
     rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
     
     #add filler rectangle

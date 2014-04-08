@@ -13,34 +13,47 @@ def static_var(varname, value):
     return decorate
 
 
-@static_var('mods', [0])
+# @static_var('mods', [0])
+# def randomColor(level=1, secondary = None):
+#     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
+# 
+#     if level == 1:
+# #         print randomColor.mods
+#         randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
+#     elif level > 1:
+#         randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
+# #         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
+# #     print randomColor.mods
+#     
+#     h = sum(randomColor.mods) %1
+#     h = randomColor.mods[0]%1
+#     
+#     
+# #     secondary=None
+#     if secondary is not None:
+#         
+#         s = (secondary**(1/2)) * 0.4 + 0.2
+#         v = (secondary**(1/2)) * 0.6 + 0.4
+#     else:
+#         s = 0.4
+#         v = 0.7
+#     return QColor(rgb(h,s,v))     
+
 def randomColor(level=1, secondary = None):
     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
 
-    if level == 1:
-#         print randomColor.mods
-        randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
-    elif level > 1:
-        randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
-#         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
-#     print randomColor.mods
     
-    h = sum(randomColor.mods) %1
-    h = randomColor.mods[0]%1
+    h = 0.3*(1+level)%1
     
-    
-#     secondary=None
-    if secondary:
+    if secondary is not None:
         
         s = (secondary**(1/2)) * 0.4 + 0.2
         v = (secondary**(1/2)) * 0.6 + 0.4
     else:
-        s = 0.3
-        v = 0.7
-    return QColor(rgb(h,s,v))     
-
-        
-        
+        s = 0.4
+        v = 0.7 
+    
+    return QColor(rgb(h,s,v))
         
 class TreemapVis(QWidget):
     border = 10
@@ -107,11 +120,8 @@ class TreemapVis(QWidget):
     def build(self,faultTree,square, depthLimit =2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
-        def subTreeValue(fault):
-            total=fault.value() + sum([subTreeValue(subFault) for subFault in fault.connections])
-            return total
         
-        def recursive_build(faultList, square, mLevel):
+        def recursive_build(faultList, square, mLevel, parent = None):
             
             try:
                 mLevel = len(faultList[0].elements)
@@ -125,15 +135,20 @@ class TreemapVis(QWidget):
             if len(faultList) == 0:
                 return None
             
-            faultList = sorted(faultList, key= lambda x: x.value())
-            #lay out faults
-            rectangles, leftovers = layout([subTreeValue(fault) for fault in faultList], square)
+#             if parent is not None:
+#                 faultList.insert(0,parent)
             
+            #lay out faults
+            rectangles, leftovers = layout(([parent.value()] if parent is not None else [])+[fault.subValue() for fault in faultList], square)
+#             rectangles, leftovers = layout([fault.subValue() for fault in faultList], square)
+            
+            if parent is not None:
+                parentRect = rectangles.pop(0)
             
             #remove elements that are not in list (eg. rejected because of quantization or because they are smaller than 1/2 pixel)
             faultList = [el for index,el in enumerate(faultList) if index not in leftovers]
             
-            if len(faultList) < len(rectangles):
+            if len(faultList) < len(rectangles):#its possible this is a bug because if we quit early there will be fewer rectangles
             
                 xa,ya,xb,yb = rectangles.pop()
                 leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya], parent=self, color=QColor(150,150,150));
@@ -141,11 +156,15 @@ class TreemapVis(QWidget):
             
             if mLevel >= depthLimit:
                 #lay out faults and add a rectangle widget to each fault
-                
-                
+#                 
+                if parent is not None and parentRect:
+                    fault = parent
+                    xa,ya,xb,yb = parentRect
+                    fault.addRectangle(self, [xa,ya,xb-xa,yb-ya], level = mLevel - startLevel)
+                    self.addOutline(xa,ya,xb,yb, mLevel+1)
+                    
                 for fault,rectangle in zip(faultList,rectangles):
-                    if len(rectangle) == 0:
-                        print('pause')
+                    if not rectangle: continue
                     xa,ya,xb,yb = rectangle
                     fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], level=mLevel-startLevel+1)
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
@@ -156,11 +175,12 @@ class TreemapVis(QWidget):
                     gets recursively built.
                 """
                 for fault, rectangle in zip(faultList, rectangles):
+                    if not rectangle: continue
                     xa,ya,xb,yb = rectangle
                     
                     if (xb-xa)*(yb-ya) > 50*50 and fault.connections:
                         randomColor(mLevel-startLevel+1)#prime random colour generator
-                        recursive_build(fault.connections, rectangle, mLevel+1)
+                        recursive_build(fault.connections, rectangle, mLevel+1, parent  = fault)
                     else:
 #                         print( "{},...".format(rectangle))
                         self.addOutline(xa,ya,xb,yb,mLevel + 1)
@@ -198,8 +218,13 @@ class Rectangle(QWidget):
         
         super(self.__class__,self).__init__(parent)
         if parent != None: self.show()
+        
+        
         self.fault = fault
-        self.secondary = secondary
+        if self.fault:
+            self.secondary = self.fault.secondary()
+        else:
+            self.secondary =   secondary
 #         print self.fault
         xa,ya,xb,yb = pos
         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
@@ -212,7 +237,13 @@ class Rectangle(QWidget):
     
     def setColor(self,level):
         
-        self.color=randomColor(level, secondary=self.fault.secondary())
+
+#         b143 = Branch(143, [[663.00577728863971, 547.93417752362961], [646.45015383688076, 563.47923863039762]])
+#         b158 = Branch(158, [[799.73138464695671, 595.92884957506737], [801.34029110008339, 584.2730755377961], [834.91412259627805, 584.31296202815611], [835.25882366188546, 544.15920505629845]])
+#         bu83 = Bus(83, [ 663.00577729,  547.93417752])
+#         if b143 in self.fault.elements and (b158 in self.fault.elements or bu83 in self.fault.elements):
+#             print('wait')
+        self.color=randomColor(level, secondary=self.fault.secondary() if len(self.fault.elements) > 1 else None)
     def enterEvent(self, e):
         self.toggleHighlight()
         try:
@@ -230,7 +261,10 @@ class Rectangle(QWidget):
         except:
             pass
             #if the rectangle has no associated faults
-
+    
+    def mousePressEvent(self,e):
+        print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
+#         print(self.fault)
     def paintEvent(self, e):
         
 #         print 'Painted: ',self.geometry(), self.color

@@ -18,7 +18,7 @@ file = 'cpfResults_treemap'
 ## sample files for Treemap
 # file = 'cpfResults_mid'
 # file ='cpfResults_med'
-# file = 'cpfResults_case30_2level'
+file = 'cpfResults_case30_2level'
 # file = 'cpfResults_case30_full_3_levels'
 
 # file = 'cpfResults_case118'
@@ -229,15 +229,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
     pr.enable()
     
     
-# #     identify connections
-#     keys = sorted(faultTree.keys())
-#     for level, nextLevel in zip( keys[0:-1], keys[1:]):
-#         print(level)
-#         for fault in faultTree[level]:
-#             for subFault in faultTree[nextLevel]:
-#                 if fault.isParentOf(subFault):
-#                     fault.addConnection(subFault)
-#     
+    
 #     #identify connections
     keys = sorted(faultTree.keys())
     
@@ -267,7 +259,7 @@ def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
         values = [fault.value() for fault in levelFaults]
         FaultType.setLevelContext(level, min(values), max(values))
         
-        values = [fault.subTreeValue() for fault in levelFaults]
+        values = [fault.subValue() for fault in levelFaults]
         FaultType.setCumulativeContext(level, min(values), max(values))
 
         

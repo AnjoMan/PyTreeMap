@@ -52,6 +52,14 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
     
+    def drawLine(line):
+        for point in line:
+            plt.scatter(*point, c='b')
+        
+        
+        for (ax,ay),(bx,by) in zip(line[0:-1], line[1:]):
+            plt.plot([ax,bx],[ay,by], 'b')
+    
     
     L1 = [ [1,1],
         [10,15],
@@ -69,23 +77,14 @@ if __name__ == "__main__":
 #     p3 = [15,14]
     p3 = [7,8]
     
-    
-    for point in L1:
-        plt.scatter(*point,c='b')
-    
-    for (ax,ay), (bx,by) in zip(L1[0:-1], L1[1:]):
-        plt.plot( [ax,bx],[ay,by], 'b')
+    drawLine(L1)
         
     
     plt.scatter(*p3)
     
     
     
-    for point in L2:
-        plt.scatter(*point, c='b')
-    
-    for (ax,ay), (bx,by) in zip(L2[0:-1], L2[1:]):
-        plt.plot( [ax,bx],[ay,by], 'b')
+    drawLine(L2)
     
     
     dist, p1,p2= lineToLine(L1,L2)
@@ -100,8 +99,7 @@ if __name__ == "__main__":
     dist, pt = pointToLine(L2,p3)
     plt.scatter(*pt, c='r')
     plt.plot([pt[0],p3[0]], [pt[1],p3[1]], "g-")
-    
-         
+
     plt.axes().set_aspect(aspect='equal')
     plt.show()
         

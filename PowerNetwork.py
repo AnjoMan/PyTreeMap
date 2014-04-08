@@ -198,8 +198,8 @@ class Element(QGraphicsItem,object ):
         
     def mousePressEvent(self, event):
         self.highlight = not self.highlight
-        print(self.highlight)
         print(str(self))
+        print(self.getPos())
         self.update(self.boundingRect())
         try:
             for fault in self.faults:
@@ -460,7 +460,7 @@ class Fault(object):
         except: 
             return None
     
-    def subTreeValue(self): return self.value() + sum([subFault.subTreeValue() for subFault in self.connections])
+    def subValue(self): return self.value() + sum([subFault.subValue() for subFault in self.connections])
     
     def getElements(self):
         return self.elements
