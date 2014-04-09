@@ -13,47 +13,47 @@ def static_var(varname, value):
     return decorate
 
 
-# @static_var('mods', [0])
-# def randomColor(level=1, secondary = None):
-#     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
-# 
-#     if level == 1:
-# #         print randomColor.mods
-#         randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
-#     elif level > 1:
-#         randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
-# #         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
-# #     print randomColor.mods
-#     
-#     h = sum(randomColor.mods) %1
-#     h = randomColor.mods[0]%1
-#     
-#     
-# #     secondary=None
-#     if secondary is not None:
-#         
-#         s = (secondary**(1/2)) * 0.4 + 0.2
-#         v = (secondary**(1/2)) * 0.6 + 0.4
-#     else:
-#         s = 0.4
-#         v = 0.7
-#     return QColor(rgb(h,s,v))     
-
+@static_var('mods', [0])
 def randomColor(level=1, secondary = None):
     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
 
+    if level == 1:
+#         print randomColor.mods
+        randomColor.mods = [(randomColor.mods[0] + 0.3)%1, 1]
+    elif level > 1:
+        randomColor.mods = randomColor.mods[0:level-1] + [(random.rand()-0.5)*4.0/10 * 1/level]
+#         randomColor.h += random.rand() * 7.0/10 * 1/self.level**2
+#     print randomColor.mods
     
-    h = 0.3*(1+level)%1
+    h = sum(randomColor.mods) %1
+    h = randomColor.mods[0]%1
     
+    
+#     secondary=None
     if secondary is not None:
         
         s = (secondary**(1/2)) * 0.4 + 0.2
         v = (secondary**(1/2)) * 0.6 + 0.4
     else:
         s = 0.4
-        v = 0.7 
-    
-    return QColor(rgb(h,s,v))
+        v = 0.7
+    return QColor(rgb(h,s,v))     
+
+# def randomColor(level=1, secondary = None):
+#     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
+# 
+#     
+#     h = 0.3*(1+level)%1
+#     
+#     if secondary is not None:
+#         
+#         s = (secondary**(1/2)) * 0.4 + 0.2
+#         v = (secondary**(1/2)) * 0.6 + 0.4
+#     else:
+#         s = 0.4
+#         v = 0.7 
+#     
+#     return QColor(rgb(h,s,v))
         
 class TreemapVis(QWidget):
     border = 10
@@ -146,12 +146,14 @@ class TreemapVis(QWidget):
                 parentRect = rectangles.pop(0)
             
             #remove elements that are not in list (eg. rejected because of quantization or because they are smaller than 1/2 pixel)
-            faultList = [el for index,el in enumerate(faultList) if index not in leftovers]
+#             faultList = [el for index,el in enumerate(faultList) if index not in leftovers]
             
-            if len(faultList) < len(rectangles):#its possible this is a bug because if we quit early there will be fewer rectangles
-            
-                xa,ya,xb,yb = rectangles.pop()
+            if len(faultList) < len(rectangles):
+                xa,ya,xb,yb = rectangles[-1]
+                rectangles.pop()
+#                 xa,ya,xb,yb = rectangles.pop()
                 leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya], parent=self, color=QColor(150,150,150));
+                leftoverRect.setColor(mLevel)
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
             if mLevel >= depthLimit:
@@ -221,29 +223,19 @@ class Rectangle(QWidget):
         
         
         self.fault = fault
-        if self.fault:
+        if self.fault and len(self.fault.elements) > 1:
             self.secondary = self.fault.secondary()
         else:
             self.secondary =   secondary
-#         print self.fault
+            
         xa,ya,xb,yb = pos
         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
         self.setGeometry(*pos)
         self.color = color
         self.highlight = False
-#         for element in self.fault.elements:
-#             self.enterEvent.connect(element.toggleHighlight)
-#             self.leaveEvent.connect(element.toggleHighlight)
     
     def setColor(self,level):
-        
-
-#         b143 = Branch(143, [[663.00577728863971, 547.93417752362961], [646.45015383688076, 563.47923863039762]])
-#         b158 = Branch(158, [[799.73138464695671, 595.92884957506737], [801.34029110008339, 584.2730755377961], [834.91412259627805, 584.31296202815611], [835.25882366188546, 544.15920505629845]])
-#         bu83 = Bus(83, [ 663.00577729,  547.93417752])
-#         if b143 in self.fault.elements and (b158 in self.fault.elements or bu83 in self.fault.elements):
-#             print('wait')
-        self.color=randomColor(level, secondary=self.fault.secondary() if len(self.fault.elements) > 1 else None)
+        self.color=randomColor(level, secondary=self.secondary)
     def enterEvent(self, e):
         self.toggleHighlight()
         try:
@@ -263,23 +255,28 @@ class Rectangle(QWidget):
             #if the rectangle has no associated faults
     
     def mousePressEvent(self,e):
-        print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
-#         print(self.fault)
+        if self.fault:
+            print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
+        else: print(self.fault)
+        
     def paintEvent(self, e):
         
 #         print 'Painted: ',self.geometry(), self.color
         painter = QPainter(self)
         painter.setPen(Qt.NoPen)
         
+        brush = QBrush(Qt.SolidPattern) if self.fault else QBrush(Qt.Dense3Pattern)
+
+        
         if self.highlight:
             r,b,g = self.color.red(), self.color.blue(), self.color.green()
             h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
             intensity = 80
-            painter.setBrush(QColor.fromHsv(h, s*0.6, intensity))
+            brush.setColor(QColor.fromHsv(h, s*0.6, intensity))
         else:
-            painter.setBrush(self.color)
-#             painter.setPen(self.color)
-#             painter.setBrush(Qt.NoBrush)
+            brush.setColor(self.color)
+
+        painter.setBrush(brush)
         painter.drawRect(QRectF(1,1,self.width()-1, self.height()-1)) #rectangles are drawn so that border ends on the right side of xb, but widgets end on the left side of xb. Thus, make rectangle one smaller. (ditto for y)
             #with Qt.NoPen, rectangle moves over and fills the space of the border, so we need to offset by 1
         painter.end()

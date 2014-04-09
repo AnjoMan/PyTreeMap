@@ -101,6 +101,8 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
                 Practically we limit to modValue > 2.5 because below a column
                 width of 3, there will be no box between the boundaries.
             """
+            while a:
+                values.append(a.pop())
             return [], values, pos
         
         layColumn.roundingError += colWidth - np.round(modValue) #update accumulated error to reflect deviation from optimal colWidth
@@ -158,6 +160,10 @@ def layout(values, pos, quantize=True, ):
     nValues = len(values)
     
     
+    zeros = [val for val in values if val <= 0]
+    if len(zeros) > 0:
+        print('wait')
+    
     #scale values to fill the given area
     values = np.array(values) * (pos[2]-pos[0])*(pos[3]-pos[1]) /sum([val for val in values if val > 0])
     
@@ -192,27 +198,43 @@ def layout(values, pos, quantize=True, ):
         
         
     
-#     if len(values) > 1: #we need to do a fill box
-#         
-    #pad 'rectangles' with empty arrays.
-#     rectangles = rectangles + [[]]*(nValues - len(rectangles))
-    
-    if len(origIndexes) > 0:
-        print('wait')
-    #transfer over original indexes
-#     origIndexes_rect = origIndexes + origIndexes_rect;
-    
-    #re-sort rectangles according to their original ordering
-    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
-    
-    rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
-    
-    #add filler rectangle
-    if nextBox and not boxPos:
+    if len(values) > 1 and not boxPos: #we need to do a fill box
+        rectangles = [[]]*len(origIndexes) + rectangles  #pad rectangles with empty - indicates these have been replaced
+        origIndexes_rect = origIndexes + origIndexes_rect #add indexes of leftover rectangles
+        
         rectangles.append(nextBox)
-        origIndexes_rect.append(len(rectangles)-1+len(values))
+        origIndexes_rect.append(nValues)
     
+    elif len(values) == 1: #we don't need a fill box but layColumns quit early and boxPos is empty
+        rectangles.insert(0,nextBox)
+        origIndexes_rect = origIndexes + origIndexes_rect
+        origIndexes = []
+    
+    origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
     return list(rectangles), list(origIndexes)
+    
+    
+    
+# #         
+#     #pad 'rectangles' with empty arrays.
+# #     rectangles = rectangles + [[]]*(nValues - len(rectangles))
+#     
+#     if len(origIndexes) > 0:
+#         print('wait')
+#     #transfer over original indexes
+# #     origIndexes_rect = origIndexes + origIndexes_rect;
+#     
+#     #re-sort rectangles according to their original ordering
+#     origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+#     
+#     rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
+#     
+#     #add filler rectangle
+#     if nextBox and not boxPos:
+#         rectangles.append(nextBox)
+#         origIndexes_rect.append(len(rectangles)-1+len(values))
+#     
+#     return list(rectangles), list(origIndexes)
 
 
 

@@ -448,7 +448,7 @@ class Fault(object):
             except:
                 
                 if len(self.elements) == 1:
-                    self.secondaryValue = 0;
+                    self.secondaryValue = 0
                     return self.secondaryValue
                 
                 import itertools
