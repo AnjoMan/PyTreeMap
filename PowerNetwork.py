@@ -113,7 +113,11 @@ class Element(QGraphicsItem,object ):
         self.highlight = False
     
     
-    def __repr__(self): return self.__class__.__name__ + " %04d" % self.id
+    def __repr__(self): return "{} {:04d}".format(self.__class__.__name__ ,self.id)
+    
+    def shortRepr(self): 
+#         return "{:.2s}{:d}".format(self.__class__.__name__, self.id)
+        return str(self.id)
     def __eq__(self, other): 
         return True if self.__class__.__name__ == other.__class__.__name__ and self.id == other.id else False
     
@@ -199,7 +203,7 @@ class Element(QGraphicsItem,object ):
     def mousePressEvent(self, event):
         self.highlight = not self.highlight
         print(str(self))
-        print(self.getPos())
+#         print(self.getPos())
         self.update(self.boundingRect())
         try:
             for fault in self.faults:

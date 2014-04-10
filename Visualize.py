@@ -13,7 +13,8 @@ from PySide import QtGui, QtCore
 
 ## sample files for Tree
 
-file = 'cpfResults_treemap'
+file = 'cpfResults_4branch'
+# file = 'cpfResults_treemap'
 
 ## sample files for Treemap
 # file = 'cpfResults_mid'

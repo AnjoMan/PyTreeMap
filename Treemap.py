@@ -28,7 +28,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     dX, dY = xb-xa, yb-ya
     
     if dY < 1.0 or dX < 1.0:
-        return [], values, []
+        return [], values, pos
     
     #colLength is the shorter dimension, boxes are lined up along this dimension
     colLength = dY if dY <= dX else dX
@@ -39,8 +39,6 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
     
     def fitValues(values, Y):
         #take a set of values and a column (row) length, and produce the column (row) width and box height (widths)
-        if Y == 0:
-            print('wait!')
         try:
             x = sum(values)/Y
         except:
@@ -108,6 +106,9 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         layColumn.roundingError += colWidth - np.round(modValue) #update accumulated error to reflect deviation from optimal colWidth
         colWidth = np.round(modValue) #round modified column width
         
+        if colWidth > (dY if dY > dX else dX):
+            colWidth = dY if dY>dX else dX
+            
         boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
 #         boxLengths = boxLengths - layColumn.roundingError * colLength / len(boxLengths)
         boxLengths = np.round(boxLengths) #round to integer value
@@ -138,6 +139,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
         
         return [], values, pos #returning boxPos = [] indicates that no values were laid out and nextBox should be used as a summary for small insignificant values
 # 
+    boxPositions.reverse()
     return boxPositions, values, nextBox
 
 # def positionRectangles(pos, ys):
@@ -154,15 +156,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 
 def layout(values, pos, quantize=True, ):
     
-    #filter out negative values
-#     posValues = [val for val in values if val > 0]
-    
     nValues = len(values)
-    
-    
-    zeros = [val for val in values if val <= 0]
-    if len(zeros) > 0:
-        print('wait')
     
     #scale values to fill the given area
     values = np.array(values) * (pos[2]-pos[0])*(pos[3]-pos[1]) /sum([val for val in values if val > 0])
@@ -187,16 +181,12 @@ def layout(values, pos, quantize=True, ):
         boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 2)
             #fit the next x values into a row/column
             
-        #
         if nextBox:
             rectangles = boxPos + rectangles
-        
         
         origIndexes_rect = origIndexes[len(origIndexes)-len(boxPos):] + origIndexes_rect
         origIndexes = origIndexes[0:len(origIndexes)-len(boxPos)]
         col += 1
-        
-        
     
     if len(values) > 1 and not boxPos: #we need to do a fill box
         rectangles = [[]]*len(origIndexes) + rectangles  #pad rectangles with empty - indicates these have been replaced
@@ -214,41 +204,6 @@ def layout(values, pos, quantize=True, ):
     return list(rectangles), list(origIndexes)
     
     
-    
-# #         
-#     #pad 'rectangles' with empty arrays.
-# #     rectangles = rectangles + [[]]*(nValues - len(rectangles))
-#     
-#     if len(origIndexes) > 0:
-#         print('wait')
-#     #transfer over original indexes
-# #     origIndexes_rect = origIndexes + origIndexes_rect;
-#     
-#     #re-sort rectangles according to their original ordering
-#     origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
-#     
-#     rectangles, origIndexes_rect = list(rectangles), list(origIndexes_rect)
-#     
-#     #add filler rectangle
-#     if nextBox and not boxPos:
-#         rectangles.append(nextBox)
-#         origIndexes_rect.append(len(rectangles)-1+len(values))
-#     
-#     return list(rectangles), list(origIndexes)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
