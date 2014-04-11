@@ -43,7 +43,7 @@ def randomColor(level=1, secondary = None):
     def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
 
     
-    h = 0.3*(1+level)%1
+    h = 0.32*(1+level)%1
     secondary = None
     if secondary is not None:
         
@@ -117,7 +117,7 @@ class TreemapVis(QWidget):
     def resizeEvent(self, e):
         print( 'Resized!')
         
-    def build(self,faultTree,square, depthLimit =2):
+    def build(self,faultTree,square,startLimit=1, depthLimit =3):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         
@@ -146,19 +146,20 @@ class TreemapVis(QWidget):
                 leftoverRect.setColor(mLevel)
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
+            if parent is not None and parentRect:
+                    fault = parent
+                    xa,ya,xb,yb = parentRect
+                    fault.addRectangle(self, [xa,ya,xb-xa,yb-ya], level = mLevel - startLimit)
+                    self.addOutline(xa,ya,xb,yb, mLevel+1)
+            
             if mLevel >= depthLimit:
                 #lay out faults and add a rectangle widget to each fault
 #                 
-                if parent is not None and parentRect:
-                    fault = parent
-                    xa,ya,xb,yb = parentRect
-                    fault.addRectangle(self, [xa,ya,xb-xa,yb-ya], level = mLevel - startLevel)
-                    self.addOutline(xa,ya,xb,yb, mLevel+1)
-                    
+                
                 for fault,rectangle in zip(faultList,rectangles):
                     if not rectangle: continue
                     xa,ya,xb,yb = rectangle
-                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], level=mLevel-startLevel+1)
+                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], level=mLevel-startLimit+1)
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
@@ -171,7 +172,7 @@ class TreemapVis(QWidget):
                     xa,ya,xb,yb = rectangle
                     
                     if (xb-xa)*(yb-ya) > 50*50 and fault.connections:
-                        randomColor(mLevel-startLevel+1)#prime random colour generator
+                        randomColor(mLevel-startLimit+1)#prime random colour generator
                         recursive_build(fault.connections, rectangle, mLevel+1, parent  = fault)
                     else:
 #                         print( "{},...".format(rectangle))
@@ -180,8 +181,7 @@ class TreemapVis(QWidget):
                         self.addOutline(xa+1,ya+1, xb-1, yb-1, mLevel+2)
                         fault.addRectangle(self, [xa+1,ya+1,xb-xa-2,yb-ya-2])
         
-        startLevel = 1
-        recursive_build(faultTree[startLevel], square, startLevel)
+        recursive_build(faultTree[startLimit], square, startLimit)
     
 class TreeMapFault(Fault):
     
@@ -269,10 +269,11 @@ class Rectangle(QWidget):
         painter.drawRect(QRectF(1,1,self.width()-1, self.height()-1)) #rectangles are drawn so that border ends on the right side of xb, but widgets end on the left side of xb. Thus, make rectangle one smaller. (ditto for y)
             #with Qt.NoPen, rectangle moves over and fills the space of the border, so we need to offset by 1
         
-        #add annotations
-#         painter.setPen(Qt.black)
-#         if self.fault:
-#             painter.drawText( QPoint(4,11),", ".join([el.shortRepr() for el in self.fault.elements]))
+#         add annotations
+        painter.setPen(Qt.black)
+        painter.setFont(QFont('serif', 25))
+        if self.fault:
+            painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
         
         painter.end()
     

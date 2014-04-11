@@ -19,7 +19,7 @@ file = 'cpfResults_4branch'
 ## sample files for Treemap
 # file = 'cpfResults_mid'
 # file ='cpfResults_med'
-file = 'cpfResults_case30_2level'
+# file = 'cpfResults_case30_2level'
 # file = 'cpfResults_case30_full_3_levels'
 
 # file = 'cpfResults_case118'
@@ -403,7 +403,7 @@ if __name__ == '__main__':
 #     app = QtGui.QApplication(sys.argv)
 #     mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
 #     sys.exit(app.exec_())
-#     
+    
 
 ##
 

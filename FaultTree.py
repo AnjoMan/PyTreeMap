@@ -20,7 +20,7 @@ class Legend(object):
     def draw(self, canvas, painter):
         x,y = 20,20;
         width = 120;
-        height = 30;
+        height = 25;
         
         
         for text, color in self.items:
@@ -49,7 +49,7 @@ class TreeVis(QtGui.QWidget):
         self.show()
         self.rectangles, self.colors, self.outlines,self.lines, self.objs = [],[],[],[],[]
         self.colors = []
-        
+        self.levelLabels = []
         self.layoutMap()
         
         
@@ -89,6 +89,7 @@ class TreeVis(QtGui.QWidget):
         #build for equal spacing with radii scaled by levelContext 
         
         for levelNo, level in self.faultTree.items():
+            self.levelLabels.append( (levelNo, 80, y))
             if len(level) <2:  #case where only one fault is present
                 fault = level[0]
                 fault.radius = 15
@@ -203,6 +204,19 @@ class TreeVis(QtGui.QWidget):
         for obj in self.objs:
             obj.draw(self, qp)
         
+        
+        #draw level labels:
+        
+        qp.setPen(QtCore.Qt.black)
+        qp.setBrush(QtCore.Qt.NoBrush)
+        mFont = QtGui.QFont()
+        mFont.setPointSize(25)
+        qp.setFont(mFont)
+        for level,x, y in self.levelLabels:
+            fh = qp.fontMetrics().height()
+            qp.drawText(QPointF(x,y+fh/4), "n-{:d}".format(level))
+            
+        
         qp.end()
     
     
@@ -249,8 +263,11 @@ class TreeFault(Fault):
         x0,y0, x_,y_ = x-r,y-r,2*r,2*r
         startAngle, arcAngle = 0, 360 * 1/len(self.elements)
         
+        #scale the font to the radius
+        mFont = QtGui.QFont('serif', round((r if len(self.elements)>1 else 2*r) *.6)) #QtGui.QFont('serif', 5)
+        
         painter.setPen(QtCore.Qt.black)
-        painter.setFont(QtGui.QFont('serif', 5))
+        painter.setFont(mFont)
         painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
         
         def putText(qp,x,y,text):
