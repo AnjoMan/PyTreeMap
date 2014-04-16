@@ -3,13 +3,19 @@ import numpy as np
 # from mlabwrap import mlab
 import colorsys
 from collections import defaultdict
+
+
+
 from PowerNetwork import *
 from Treemap import layout
-# from FaultTreemap import *
 from FaultTree import *
 from TreemapDraw import *
 import sys
 from PySide import QtGui, QtCore
+
+from VisBuilder import *
+
+
 
 ## sample files for Tree
 
@@ -19,12 +25,14 @@ file = 'cpfResults_4branch'
 ## sample files for Treemap
 # file = 'cpfResults_mid'
 # file ='cpfResults_med'
-# file = 'cpfResults_case30_2level'
+file = 'cpfResults_case30_2level'
 # file = 'cpfResults_case30_full_3_levels'
+# file = 'cpfResults_case30_full_2'
+
+# file = 'cpfResults_case30_1level'
+
 
 # file = 'cpfResults_case118'
-# 
-# file = 'cpfResults_case118_small'
 # file = 'cpfResults_case118_full_1level'
 # file = 'cpfResults_case118_1level'
 # file = 'cpfResults_case118_2level'
@@ -33,58 +41,21 @@ file = 'cpfResults_4branch'
 
 depth = 2
 
+
 print("\n\n\n")
-def log(string):
-    print("\t" + '|| ' + string)
 
 
     
-import cProfile
-pr = cProfile.Profile()
-
-def compare(parentValue, childValue):
-    x1,y1 = parentValue
-    x2,y2 = childValue
-    return np.sqrt( (x1-x2)**2 + (y1-y2)**2)
-#     return np.random.rand()
-
-
-pr.enable()
-
-   
-#load cpf results from matlab file
-cpfResults = scipy.io.loadmat(file, struct_as_record=False)
-
-
-log('.mat file loaded')
-
-#get loading, reductions, and corresponding faults    
-baseLoad = cpfResults['baseLoad'][0,0]
-loads = cpfResults['CPFloads'][0]
-CPF_reductions = baseLoad - loads
-
-CPFbranches = cpfResults['branchFaults'][0]
-base = cpfResults['base'][0,0]
-
-
-
-branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
-nBranches = len(base.branch)
-nBusses = len(base.bus)
-nGens = len(base.gen)
-
-#since numpy isn't that great at loading cell arrays, we need to use try/catch to ensure we don't try to read an empty trans array
-try: 
-    nTrans = len(base.trans[0]) 
-except: 
-    nTrans = 0
-elements = defaultdict(list)
+# import cProfile
+# pr = cProfile.Profile()
 
 
 
 
 
-pr.disable()
+mCPFfile = CPFfile(file)
+
+elements = mCPFfile.getElements()
 
 
 
@@ -93,203 +64,10 @@ pr.disable()
 
 
 
-def getBranchId(busEnds):
-    #find the branch index of a branch from the busses it connects to.
-    busEnds = set(busEnds)
-    mIndex = -1
-    for index, branch in enumerate(branchBusEnds):
-        mBranch = set(branch)
-        intersection = set.intersection(mBranch, busEnds)
-        if len( intersection) > 1: return index
-    return mIndex
-
-def getGenId(bus):
-    #find the id of a generator given the bus it is in
-    try:
-        return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
-    except ValueError:
-        return -1
-
-def defaultIZE(dictionary,default_factory=list):
-    newDict = defaultdict(default_factory)
-    for k,v in dictionary.items():
-        newDict[k]=v
-    
-    return newDict
-    
-def getTransEls(trans):
-    transEls = []
-    #get branches involved
-    transEls += [ elements[Branch][getBranchId(listing)] for listing in (trans[0][0] if len(trans[0]) > 0 else [])]
-    #get busses involved
-#     import pdb; pdb.set_trace()
-    mBusses = defaultIZE(elements[Bus])
-    transEls += [mBusses[id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
-     #get gens involved
-    
-    
-    transEls += [ mBusses[getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
-    transEls = [el for el in transEls if el != []]
-    return transEls
-
-def negateY(element):
-    element = transpose(array(element))
-    element = transpose([list(element[0]), list(element[1]*-1)])
-    element = [list(point) for point in element]
-    return element
-
-
-    
-# build elements
-busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
-elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
-
-# branchPos = [negateY(element) for element in base.branch_geo[0]]
-branchPos = [element for element in base.branch_geo[0]]
-elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
-
-
-genBusses = [int(el) for el in base.gen.transpose()[0]]
-
-elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
-try:
-    elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
-except:
-    pass
 
 
 
-elList = []
-for dict in elements.values():
-    elList += dict.values()
 
-log('Grid Elements Created')
-#convert fault listings into simple lists instead of scipy matlab structures
-def collapse(listing):
-    branch, bus, gen, trans = [list(el[0]) if len(el) == 1 else list(el) for el in [listing.branch, listing.bus, listing.gen, listing.trans]]
-    
-    
-    faultEls = [];
-    for Type, typelist in zip([Branch, Bus, Gen, Transformer], [branch, bus, gen, trans]):
-        faultEls += [elements[Type][id] for id in typelist]
-    
-    relisting = defaultdict(list)
-    relisting['label'], relisting['elements'] = str(listing.label[0]), faultEls
-    return relisting
-
-CPFbranches = [ collapse(listing[0][0]) for listing in CPFbranches]
-
-
-
-def getFaults(FaultType, CPFbranches, CPF_loads, baseLoad, filter=0):
-    #get faults
-    
-    faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(CPFbranches, CPF_loads) if (baseLoad-load)/baseLoad > filter/100]
-    
-    log('faults created - {}'.format(len(faults)))
-    
-    
-    
-    faultTree = defaultdict(list)
-    #sort faults by number of element in each
-    for fault in faults:
-        faultTree[len(fault.getElements())] += [fault]
-    
-    if 0 in faultTree:
-        del faultTree[0]
-    
-    log('faultTree created')
-    
-    
-    
-#     
-    
-    #get fault position masks by element    
-    maskLength = len(faults)
-#     faultByElement = {element: [False]*maskLength for element in elList}
-    faultByElement = defaultdict(int)
-    for index, fault in enumerate(faults):
-        for element in fault.elements:
-            faultByElement[element] += 1<<index
-    
-#     
-    def int2bool(i,n): return fromiter( ((False,True)[i>>j & 1] for j in range(0,n) ), bool)
-    
-    def trueIndices(i,n): return (j for j in range(0,n) if i>>j & 1)
-    
-#     faultByElement = {key: bool2int(value) for key,value in faultByElement.items()}
-    
-    #     import pdb; pdb.set_trace()
-    log('fault indexes listed per-element')
-    
-    
-    keys = sorted(faultTree.keys())
-    keys.reverse()
-    
-    pr = cProfile.Profile()
-    pr.enable()
-    
-    
-    
-#     #identify connections
-    keys = sorted(faultTree.keys())
-    
-    faultsArray=array(faults)
-    for level in keys[0:-1]:
-        print(level)
-        for fault in faultTree[level]:
-            masks = (faultByElement[element] for element in fault.elements)
-            mask = masks.__next__()
-            for el in masks:
-                mask = mask & el
-            
-            subFaults = (faults[i] for i in trueIndices(mask, maskLength) if len(faults[i].elements) == 1+level)
-            for subFault in subFaults:
-                fault.addConnection(subFault)
-            
-            
-            
-    pr.disable()
-
-    
-    log('connections built')
-    #set limits for context getter.
-    values = [fault.value() for fault in faults]
-    FaultType.setGlobalContext(min(values),  max(values))
-    for level, levelFaults in faultTree.items():
-        values = [fault.value() for fault in levelFaults]
-        FaultType.setLevelContext(level, min(values), max(values))
-        
-        values = [fault.subValue() for fault in levelFaults]
-        FaultType.setCumulativeContext(level, min(values), max(values))
-
-        
-    
-    log('limits found')
-    
-    
-    #normalize secondaries
-    def normalize(x):
-        x = array(x)
-        x = x - min(x)
-        x = x / max(x)
-        return x
-        
-    #initialize and get secondary values for all faults.
-    secondaryValues = [fault.secondary() for fault in faults]
-    secondaryValues = normalize(secondaryValues)
-    for value, fault in zip(secondaryValues, faults):
-        fault.secondaryValue = value;
-    
-#     secondaryValues = [fault.secondary() for fault in faults]
-    
-    log("normalized secondary values")
-    
-    
-
-    return faults, faultTree, pr
-
-    p.join()
 
 width, height=  1700,800
 
@@ -352,18 +130,7 @@ if __name__ == '__main__':
     ## draw a responsive treemap diagram
     
     
-    (faults, faultTree,pr) = getFaults(TreeMapFault, CPFbranches, loads, baseLoad, filter=0)
-#     pr.print_stats(sort='cumulative')
-    
-    
-    
-    # get bounds for elList
-    rects = [list(el.boundingRect().getRect()) for el in list(elements[Bus].values()) + list(elements[Branch].values())]
-    x0,y0,xn,yn = np.transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
-    bound = [min(x0), min(y0), max(xn), max(yn)]
-    
-#     [element.fitIn([0,0,880,880], bound) for element in elList]
-    
+    (faults, faultTree) = getFaults(TreeMapFault, mCPFfile, filter=0)
     
     app = QtGui.QApplication(sys.argv)
     mOneline = OneLineWidget([0,0,900,900])
@@ -372,6 +139,7 @@ if __name__ == '__main__':
     mTreemap = None
     mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+    
     sys.exit(app.exec_())
     
         
@@ -381,31 +149,9 @@ if __name__ == '__main__':
     
     
 #     
-#     (faults, faultTree, pr) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
-#     
-# #     pr.print_stats(sort='cumulative')
-#     # 
-#     
-#     
-#     
-#     # values = [fault.getGlobalContext() for fault in faults]
-#     
-#     
-#     # from matplotlib import pyplot
-#     # 
-#     # mVals = list(loads) + [baseLoad]
-#     # pyplot.bar(range(1,len(mVals)+1),mVals)
-#     # pyplot.show()
-#     
-#     
-#     
+#     (faults, faultTree) = getFaults(TreeFault, CPFbranches, loads, baseLoad, filter=0)
 #     
 #     app = QtGui.QApplication(sys.argv)
 #     mTreeVis = TreeVis(faultTree=faultTree, pos=[10,10,1800,1000])
 #     sys.exit(app.exec_())
     
-
-##
-
-
-    pr.print_stats(sort='cumulative')

@@ -44,11 +44,11 @@ def randomColor(level=1, secondary = None):
 
     
     h = 0.32*(1+level)%1
-    secondary = None
+#     secondary = None
     if secondary is not None:
         
         s = (secondary**(1/2)) * 0.4 + 0.2
-        v = (secondary**(1/2)) * 0.6 + 0.4
+        v = (secondary**(1/2)) * 0.5 + 0.5
     else:
         s = 0.4
         v = 0.8 
@@ -115,9 +115,10 @@ class TreemapVis(QWidget):
             print(widget.geometry())
     
     def resizeEvent(self, e):
-        print( 'Resized!')
+        pass
+#         print( 'Resized!')
         
-    def build(self,faultTree,square,startLimit=1, depthLimit =3):
+    def build(self,faultTree,square,startLimit=1, depthLimit =2):
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         
@@ -270,10 +271,10 @@ class Rectangle(QWidget):
             #with Qt.NoPen, rectangle moves over and fills the space of the border, so we need to offset by 1
         
 #         add annotations
-        painter.setPen(Qt.black)
-        painter.setFont(QFont('serif', 25))
-        if self.fault:
-            painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
+#         painter.setPen(Qt.black)
+#         painter.setFont(QFont('serif', 12))
+#         if self.fault:
+#             painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
         
         painter.end()
     

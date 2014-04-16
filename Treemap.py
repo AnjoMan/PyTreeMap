@@ -22,7 +22,7 @@ def randomColor():
     return '#%02X%02X%02X' % (r*255, g*255, b*255)
 
 @static_var('roundingError', 0)
-def layColumn(values, pos, quantize=True, minBoxArea = 16):
+def layColumn(values, pos, quantize=True, minBoxArea = 2):
     xa, ya, xb, yb = pos
     
     dX, dY = xb-xa, yb-ya
@@ -153,7 +153,7 @@ def layColumn(values, pos, quantize=True, minBoxArea = 16):
 
 #draw outline
 
-
+@static_var('blocks_summarized',0)
 def layout(values, pos, quantize=True, ):
     
     nValues = len(values)
@@ -178,7 +178,7 @@ def layout(values, pos, quantize=True, ):
         #track original indexes of values that have been laid out in the treemap
     
     while len(values) > 0 and boxPos:
-        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 2)
+        boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 4*4)
             #fit the next x values into a row/column
             
         if nextBox:
@@ -201,6 +201,9 @@ def layout(values, pos, quantize=True, ):
         origIndexes = []
     
     origIndexes_rect, rectangles = zip(*sorted( zip(origIndexes_rect, rectangles)))
+    
+#     layout.blocks_summarized += len(origIndexes)
+#     print('<Treemap.layout> blocks summarized: {}'.format(layout.blocks_summarized))
     return list(rectangles), list(origIndexes)
     
     

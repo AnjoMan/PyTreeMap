@@ -93,9 +93,13 @@ class OneLine(QGraphicsView):
     
 class Element(QGraphicsItem,object ):
     color = '#F0F0F0'
+    
     weight = 10
     geo = defaultdict(None)
     hColor= {False: Qt.darkGray, True: Qt.darkRed}
+    
+    hColor = {False: QColor("#b2b8c8"), True: QColor("#e45353")}
+#     hColor = {False: QColor("#b6cdc1"), True: QColor("#e45353")}
     
     def __init__(self,id, pos):
         super(Element, self).__init__()
@@ -328,7 +332,7 @@ class Transformer(Element):
     
     def getPos(self):
         pos = [el.getPos() for el in self.elements]
-        return mean(a,0)
+        return mean(pos,0)
     
     
     def boundingRect(self):
@@ -348,7 +352,7 @@ class Transformer(Element):
                     distances.append(EL.distanceFrom(el))
             return min(distances)
         else:
-            return min([el.distanceFrom(other)[0] for el in self.elements])
+            return min([el.distanceFrom(other) for el in self.elements])
         
                 
                 
@@ -447,22 +451,21 @@ class Fault(object):
     
     def secondary(self):
         try:
-            try:
+            return self.secondaryValue
+        except:
+            
+            if len(self.elements) == 1:
+                self.secondaryValue = 0
                 return self.secondaryValue
-            except:
-                
-                if len(self.elements) == 1:
-                    self.secondaryValue = 0
-                    return self.secondaryValue
-                
-                import itertools
-                combos = itertools.combinations( range(0,len(self.elements)), 2)
-                distances = [ self.elements[i].distanceFrom(self.elements[j]) for i,j in combos]
-                
-                self.secondaryValue = mean(distances)
-                return self.secondaryValue
-        except: 
-            return None
+            
+            import itertools
+            combos = itertools.combinations( range(0,len(self.elements)), 2)
+            combos = list(combos)
+            distances = [ self.elements[i].distanceFrom(self.elements[j]) for i,j in combos]
+            
+            self.secondaryValue = mean(distances)
+            return self.secondaryValue
+
     
     def subValue(self): return self.value() + sum([subFault.subValue() for subFault in self.connections])
     
