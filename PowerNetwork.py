@@ -10,36 +10,57 @@ from PySide.QtCore import *
 import sys
 import warnings
 
+def boundingRect(elList):
+    bounds = array([list(el.boundingRect().getCoords()) for el in elList])
+    boundingRect = [min(bounds[:,0]), min(bounds[:,1]), max(bounds[:,2]), max(bounds[:,3])]
+        
+    return boundingRect
+    
 
-class OneLineWidget(QWidget):
+class OneLineWidget(QGraphicsView):
     
-    def __init__(self, shape):
+    def __init__(self, shape, diagramBound = None):
+        QGraphicsView.__init__(self)
         
-    
-        super(self.__class__,self).__init__()
         x,y,w,h = shape
-        
         self.move(x,y)
         self.resize(w,h)
-        self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(*shape)
         
+        #build a graphicsscene
+        self.scene =  QGraphicsScene(self)
         
-        self.view = QGraphicsView(self.scene)
+        if diagramBound:
+            xa,ya,w_,h_ = diagramBound
+            xa, ya, w_,h_ = round(xa-40), round(ya-40),round(w_ + 40 ),round(h_+40)
+            self.setSceneRect(xa,ya,w_,h_)
+            scale = min([w/w_, h/h_]) * 0.99
+        else:
+            self.setSceneRect(*shape)
+            scale = 1
         
-        self.view.setGeometry(300,300,900,900)
+        self.setScene(self.scene)
         
-        self.view.setCacheMode(QGraphicsView.CacheBackground)
-        self.view.setRenderHint(QPainter.Antialiasing)
-        self.view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setCacheMode(QGraphicsView.CacheBackground)
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
-        layout = QHBoxLayout()
-        layout.addWidget(self.view)
-        self.setLayout(layout)
         self.elements = []
-        
-        self.show()
+        self.scale(scale,scale)
+        self.setWindowTitle('Oneline')
+#         self.show()
     
+    def wheelEvent(self, event):
+        self.scaleView(math.pow(2.0, event.delta()/240.0))
+    
+    def scaleView(self, scaleFactor):
+        factor = self.matrix().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width()
+
+        if factor < 0.07 or factor > 100:
+            return
+
+        self.scale(scaleFactor, scaleFactor)
+        
     def addElement(self, element):
         
         try:
@@ -50,91 +71,9 @@ class OneLineWidget(QWidget):
         except TypeError:
             self.elements += [element]
             self.scene.addItem(element)
-            element.show()
-            
-#         if type(element) is list:
-#             
-#             for key,value in (element if type(el
-#             for el in element: self.addElement(el)
-#         else:
-#             self.elements += [element]
-#             self.scene.addItem(element)
-#             element.show()
+        
+        self.show()
 
-# class OneLineWidget(QGraphicsView):
-#     
-#     def __init__(self, shape):
-#         super(self.__class__,self)._init__()
-#         
-#         x,y,w,h = shape
-#         self.move(x,y)
-#         self.resize(w,h)
-#         self.scene = QGraphicsScene(self)
-#         self.scene.setSceneRect(*shape)
-#         
-#         self.setCacheMode(QGraphicsView.CacheBackground)
-#         self.setRenderHint(QPainter.Antialiasing)
-#         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-#         
-#         self.elements = []
-#         self.show()
-#     
-#     def addElement(self, element):
-#         
-#         try:
-#             if type(element) is dict: element = element.values()
-#         
-#             for el in element :
-#                 self.addElement(el)
-#         except TypeError:
-#             self.elements += [element]
-#             self.scene.addItem(element)
-#             element.show()
-        
-class OneLineScene(QGraphicsScene):
-    def __init__(self, shape):
-        super(self.__class__,self).__init__()
-        
-        
-
-        
-        self.elements = []
-    
-    def addElement(self, element):
-        self.elements += [element]
-        self.addItem(element)
-        element.setGraph(self)
-        element.show()
-
-class OneLine(QGraphicsView):
-    def __init__(self, shape):
-        super(self.__class__,self).__init__()
-        
-        x,y,w,h = shape
-        
-        self.move(x,y)
-        self.resize(w,h)
-        
-#         self.setGeometry(*shape)
-        scene = QGraphicsScene(self)
-#         scene.setSceneRect(10,10,shape[2]-20, shape[3]-20)
-        scene.setSceneRect(0,0,1200,800)
-        self.setScene(scene)
-        self.setCacheMode(QGraphicsView.CacheBackground)
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-#         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
-        
-        self.elements = [Element]
-        
-        
-#         self.show()
-    
-    def addElement(self, element):
-        self.elements += [element]
-        self.scene().addItem(element)
-        element.setGraph(self)
-        element.show()
         
     
 class Element(QGraphicsItem,object ):
@@ -180,13 +119,17 @@ class Element(QGraphicsItem,object ):
     
     def getGeo(self): return Element.geo[self.__class__][self.id]
     def getPos(self): return self.pos
+    
     def secondary(self): return self.getGeo()
     
     def addFault(self,fault):
         try: self.faults += [fault]
         except AttributeError: self.faults = [fault]
             
-    def boundingRect(self): return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+    def boundingRect(self):
+#          return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
+        pos = self.getPos()
+        return QRectF([pos[0],pos[1],0,0])
     
     
     def fitIn(self, newBox, oldBox):
@@ -277,8 +220,6 @@ class Branch(Element):
     color = '#DB0058'
     radius = 1
     
-#     def getPos(self):
-#         return Line(array(self.pos).transpose()).getPosition()
     def boundingRect(self):
         x,y = array(self.pos).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
@@ -340,13 +281,17 @@ class Branch(Element):
 class Bus(Element): 
     color = '#408Ad2'
     
-    w,h = 70,5
+    w,h = 16,5
     def defineShape(self):
         x,y = self.getPos()
         path = QPainterPath()
         path.moveTo(x,y)
         path.addRect(QRectF(x-Bus.w/2, y-Bus.h/2, Bus.w, Bus.h))
         return path
+    
+    def boundingRect(self):
+        x,y = self.getPos()
+        return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
     
     def distanceFrom(self, other):
         if type(other) is not type(self):
@@ -364,6 +309,9 @@ class Gen(Element):
     def getPos(self):
         return self.bus.getPos()
     
+    def boundingRect(self):
+        return self.bus.boundingRect()
+        
     def distanceFrom(self, other):
         return other.distanceFrom(self.bus)
 
@@ -377,15 +325,25 @@ class Transformer(Element):
         super(self.__class__, self).__init__(*args)
     
     def getPos(self):
-        pos = [el.getPos() for el in self.elements]
-        return mean(pos,0)
+        pos = []
+        for el in self.elements:
+            if type(el) is Branch:
+                pos += el.getPos()
+            else:
+                pos.append(el.getPos())
+                
+# #         pos = [el.getPos() for el in self.elements]
+        return pos
+#         return mean(pos,0)
+    
     
     
     def boundingRect(self):
-        rects = [list(el.boundingRect().getRect()) for el in self.elements]
+        rects = array([list(el.boundingRect().getRect()) for el in self.elements])
+        points = [rects[:,0].transpose(), rects[:,1].transpose(), rects[:,0]+rects[:,2], rects[:,1] + rects[:,3]]
         
-        x0,y0,xn,yn = transpose([ rect[0:2] + [rect[0]+rect[2], rect[1]+rect[3]] for rect in rects])
-        return QRectF( min(x0), min(y0), max(xn), max(yn))
+        x0,y0,xn,yn = min(points[0]), min(points[1]), max(points[2]), max(points[3])
+        return QRectF( x0,y0, xn-x0, yn-y0)
     
     def fitIn(self, *args):
         pass
@@ -604,18 +562,17 @@ def flatten(l, ltypes=(list, tuple)):
 
 
 def main():
-#     pass
     
     from PowerNetwork import Bus, Branch
     from VisBuilder import CPFfile
     
     
-    mCPFfile = CPFfile('cpfResults_case30_2level.mat')
+    mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
     elements = mCPFfile.getElements()
     
     app = QApplication(sys.argv)
     
-    ex = OneLineWidget([0,0,800,800])
+    ex = OneLineWidget([0,0,800,800], mCPFfile.boundingRect())
     
     ex.addElement(elements[Branch])
     ex.addElement(elements[Bus])

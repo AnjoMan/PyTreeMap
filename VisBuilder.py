@@ -129,7 +129,7 @@ def getFaults(FaultType, cpfFile, filter=0):
 
 class CPFfile(object):
     
-    def __init__(self, fileName):
+    def __init__(self, fileName='cpfResults_case30_2level'):
         self.results = scipy.io.loadmat(fileName, struct_as_record=False)
     
     def baseLoad(self): 
@@ -181,7 +181,15 @@ class CPFfile(object):
         return self.results['base'][0,0]
     
     
-    
+    def getElementList(self):
+        elements = self.getElements()
+        
+        elList = []
+        for elTypeList in elements.values():
+            elList += list(elTypeList.values())
+        
+        return elList
+        
     def getElements(self):
         try:
             return self.elements
@@ -264,4 +272,16 @@ class CPFfile(object):
             log('Grid Elements Created')
             return self.elements
     
+    def boundingRect(self, elements=None):
+        
+        if not elements:
+            elList = self.getElementList()
+        
+        return boundingRect(elList)
+            
+#         bounds = array([list(el.boundingRect().getCoords()) for el in elList])
+#         boundingRect = [min(bounds[:,0]), min(bounds[:,1]), max(bounds[:,2]), max(bounds[:,3])]
+#             
+#         return boundingRect
+            
    

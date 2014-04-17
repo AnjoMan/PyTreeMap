@@ -34,7 +34,7 @@ file = 'cpfResults_case30_2level'
 
 # file = 'cpfResults_case118'
 # file = 'cpfResults_case118_full_1level'
-# file = 'cpfResults_case118_1level'
+file = 'cpfResults_case118_1level'
 # file = 'cpfResults_case118_2level'
 
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     (faults, faultTree) = getFaults(TreeMapFault, mCPFfile, filter=0)
     
     app = QtGui.QApplication(sys.argv)
-    mOneline = OneLineWidget([0,0,900,900])
+    mOneline = OneLineWidget([0,30,900,900], mCPFfile.boundingRect())
     
     mOneline.addElement(elements[Branch])
     mOneline.addElement(elements[Bus])
