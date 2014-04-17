@@ -41,10 +41,56 @@ class OneLineWidget(QWidget):
         self.show()
     
     def addElement(self, element):
-        self.elements += [element]
-        self.scene.addItem(element)
-        element.show()
+        
+        try:
+            if type(element) is dict: element = element.values()
+        
+            for el in element :
+                self.addElement(el)
+        except TypeError:
+            self.elements += [element]
+            self.scene.addItem(element)
+            element.show()
+            
+#         if type(element) is list:
+#             
+#             for key,value in (element if type(el
+#             for el in element: self.addElement(el)
+#         else:
+#             self.elements += [element]
+#             self.scene.addItem(element)
+#             element.show()
 
+# class OneLineWidget(QGraphicsView):
+#     
+#     def __init__(self, shape):
+#         super(self.__class__,self)._init__()
+#         
+#         x,y,w,h = shape
+#         self.move(x,y)
+#         self.resize(w,h)
+#         self.scene = QGraphicsScene(self)
+#         self.scene.setSceneRect(*shape)
+#         
+#         self.setCacheMode(QGraphicsView.CacheBackground)
+#         self.setRenderHint(QPainter.Antialiasing)
+#         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+#         
+#         self.elements = []
+#         self.show()
+#     
+#     def addElement(self, element):
+#         
+#         try:
+#             if type(element) is dict: element = element.values()
+#         
+#             for el in element :
+#                 self.addElement(el)
+#         except TypeError:
+#             self.elements += [element]
+#             self.scene.addItem(element)
+#             element.show()
+        
 class OneLineScene(QGraphicsScene):
     def __init__(self, shape):
         super(self.__class__,self).__init__()
@@ -558,13 +604,22 @@ def flatten(l, ltypes=(list, tuple)):
 
 
 def main():
-    pass
-#     
-#     app = QApplication(sys.argv)
-#     
-#     ex = OneLineWidget([0,0,900,900])
-#     ex.addElement(Element(1,[100,100]))
-#     sys.exit(app.exec_())
+#     pass
+    
+    from PowerNetwork import Bus, Branch
+    from VisBuilder import CPFfile
+    
+    
+    mCPFfile = CPFfile('cpfResults_case30_2level.mat')
+    elements = mCPFfile.getElements()
+    
+    app = QApplication(sys.argv)
+    
+    ex = OneLineWidget([0,0,800,800])
+    
+    ex.addElement(elements[Branch])
+    ex.addElement(elements[Bus])
+    sys.exit(app.exec_())
 
 
     

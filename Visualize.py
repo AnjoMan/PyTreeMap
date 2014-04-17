@@ -134,8 +134,11 @@ if __name__ == '__main__':
     
     app = QtGui.QApplication(sys.argv)
     mOneline = OneLineWidget([0,0,900,900])
-    [mOneline.addElement(el) for el in elements[Bus].values()]
-    [mOneline.addElement(el) for el in elements[Branch].values()]
+    
+    mOneline.addElement(elements[Branch])
+    mOneline.addElement(elements[Bus])
+#     [mOneline.addElement(el) for el in elements[Branch]]
+#     [mOneline.addElement(el) for el in elements[Bus]]
     mTreemap = None
     mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
