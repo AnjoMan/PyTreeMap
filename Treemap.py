@@ -155,7 +155,8 @@ def layColumn(values, pos, quantize=True, minBoxArea = 2):
 
 @static_var('blocks_summarized',0)
 def layout(values, pos, quantize=True, ):
-    
+    #assume pos is in the form [x0,y0, xn,yn]
+
     nValues = len(values)
     
     #scale values to fill the given area
@@ -256,11 +257,14 @@ class TestCanvas(QWidget):
         painter = QPainter(self)
         
         for rect in self.rectangles:
-            xa,ya,xb,yb = rect
-            
-            rect = xa,ya,xb-xa,yb-ya
-            painter.setBrush(randomColor())
-            painter.drawRect(QRect(*rect))
+            try:
+                xa,ya,xb,yb = rect
+                
+                rect = xa,ya,xb-xa,yb-ya
+                painter.setBrush(randomColor())
+                painter.drawRect(QRect(*rect))
+            except:
+                print('rect was foul')
 
 
 

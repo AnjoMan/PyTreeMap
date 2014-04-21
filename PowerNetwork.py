@@ -10,6 +10,43 @@ from PySide.QtCore import *
 import sys
 import warnings
 
+
+
+## test
+
+""" The simple test for PowerNetwork is to buid a one-line diagram from a case.
+    Further testing should include testing distance calculations and other
+    aspects of the code """
+
+
+def main():
+    
+    from PowerNetwork import Bus, Branch
+    from VisBuilder import CPFfile
+    
+    
+    mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
+    elements = mCPFfile.getElements()
+    
+    app = QApplication(sys.argv)
+    
+    ex = OneLineWidget([0,0,800,800], mCPFfile.boundingRect())
+    
+    ex.addElement(elements[Branch])
+    ex.addElement(elements[Bus])
+    sys.exit(app.exec_())
+    
+    
+    
+    
+    
+    
+    
+
+
+## code
+
+
 def boundingRect(elList):
     bounds = array([list(el.boundingRect().getCoords()) for el in elList])
     boundingRect = [min(bounds[:,0]), min(bounds[:,1]), max(bounds[:,2]), max(bounds[:,3])]
@@ -18,6 +55,7 @@ def boundingRect(elList):
     
 
 class OneLineWidget(QGraphicsView):
+    """ A widget in which a oneline is drawn. contains a graphics scene """
     
     def __init__(self, shape, diagramBound = None):
         QGraphicsView.__init__(self)
@@ -77,6 +115,12 @@ class OneLineWidget(QGraphicsView):
         
     
 class Element(QGraphicsItem,object ):
+    """ Object representing single grid elements, with child types such as 
+        branch, bus, generator and transformer. Has methods for comparing
+        elements for equality, storing position information, as well as
+        implements the necessary functions to be drawn in a one-line diagram."""
+        
+        
     color = '#F0F0F0'
     
     weight = 10
@@ -94,7 +138,7 @@ class Element(QGraphicsItem,object ):
         #
 #         if oneline != None:
 #             self.graph = weakref.ref(oneline)
-        
+        self.setAcceptHoverEvents(True)
         self.newPos = QPointF()
         self.setCacheMode(self.DeviceCoordinateCache)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -173,31 +217,22 @@ class Element(QGraphicsItem,object ):
         return path
         
     def paint(self, painter, option, widget):
-        mColor = Element.hColor[self.highlight]
+        mColor = Element.hColor[self.highlight] # or self.isUnderMouse()]
         painter.setPen(mColor)
         painter.setBrush(mColor)
         painter.drawPath(self.shape())
         
         
     def hoverEnterEvent(self, event):
-        print('in')
-        self.toggleHighlight()
-        
-        for fault in self.faults:
-            fault.toggleHighlight()
+        self.update(self.boundingRect())
     
     def hoverLeaveEvent(self,event):
-        print('out')
-        self.toggleHighlight()
-        
-        for fault in self.faults:
-            fault.toggleHighlight()
+        self.update(self.boundingRect())
         
     def mousePressEvent(self, event):
-        self.highlight = not self.highlight
         print(str(self))
-#         print(self.getPos())
-        self.update(self.boundingRect())
+        self.toggleHighlight()
+        
         try:
             for fault in self.faults:
                 fault.toggleHighlight()
@@ -208,7 +243,10 @@ class Element(QGraphicsItem,object ):
     def toggleHighlight(self):
         self.highlight = not self.highlight
         self.update(self.boundingRect())
-        
+    
+    def setHighlight(self, set = False):
+        if self.highlight != set:
+            self.toggleHighlight()
         
     def setGraph(self,graph):
         self.graph = weakref.ref(graph)
@@ -362,6 +400,13 @@ class Transformer(Element):
                 
     
 class Fault(object):
+    """ Object represents a system fault from a power system perspective.
+        Includes information about elements involved as well as any child faults
+        [these must be specified using .addConnection()]. Does not implement any
+        UI related methods for including in a Treemap or Treemap/Oneline combo
+        
+        """
+    
     levelContext = defaultdict(list)
     globalContext = defaultdict(list)
     cumulativeContext = defaultdict(list)
@@ -460,14 +505,11 @@ class Fault(object):
             
             if len(self.elements) == 1:
                 self.secondaryValue = 0
-                return self.secondaryValue
+            else:
+                import itertools
+                distances = [ elA.distanceFrom(elB) for elA, elB in itertools.combinations(self.elements,2)]
+                self.secondaryValue = mean(distances)
             
-            import itertools
-            combos = itertools.combinations( range(0,len(self.elements)), 2)
-            combos = list(combos)
-            distances = [ self.elements[i].distanceFrom(self.elements[j]) for i,j in combos]
-            
-            self.secondaryValue = mean(distances)
             return self.secondaryValue
 
     
@@ -491,6 +533,10 @@ class Fault(object):
         return newFault
 
 class Line:
+    """
+    Construct for getting basic properties of a multi-segment branch/line
+    geometry. May be obsolete.
+    """
     def __init__(self, myNodes):
         self.nodesX = myNodes[0]
         self.nodesY = myNodes[1]
@@ -561,22 +607,7 @@ def flatten(l, ltypes=(list, tuple)):
     
 
 
-def main():
-    
-    from PowerNetwork import Bus, Branch
-    from VisBuilder import CPFfile
-    
-    
-    mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
-    elements = mCPFfile.getElements()
-    
-    app = QApplication(sys.argv)
-    
-    ex = OneLineWidget([0,0,800,800], mCPFfile.boundingRect())
-    
-    ex.addElement(elements[Branch])
-    ex.addElement(elements[Bus])
-    sys.exit(app.exec_())
+
 
 
     

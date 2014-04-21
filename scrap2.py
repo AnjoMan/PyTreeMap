@@ -1,13 +1,7 @@
-# from VisBuilder import *
-# 
-# 
-# 
-# 
-# mCPFfile = CPFfile()
-# 
-# elements = mCPFfile.getElements()
-# 
-# bounds = CPFfile.boundingRect(None, elements)
+from itertools import permutations, combinations, product
+from numpy import mean
+
+for a,b in product( [1,2,3], ['a','b','c']):
+    print(a,b)
 
 
-mdict = {'a':1,'b':2} + {'c':3,'d':4}

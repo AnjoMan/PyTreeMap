@@ -1,16 +1,3 @@
-from PySide.QtCore import *
-from PySide.QtGui import *
-import sys
-from PowerNetwork import *
-import colorsys
-from numpy import *
-from Treemap import layout
-
-def static_var(varname, value):
-    def decorate(func):
-        setattr(func, varname, value)
-        return func
-    return decorate
 
 
 # @static_var('mods', [0])
@@ -39,45 +26,17 @@ def static_var(varname, value):
 #         v = 0.7
 #     return QColor(rgb(h,s,v))     
 
-def randomColor(level=1, secondary = None):
-    def rgb(h,s,v): return '#%02X%02X%02X' % tuple( [ int(round(el*255)) for el in colorsys.hsv_to_rgb(h,s,v)])
 
-    
-    h = 0.32*(1+level)%1
-#     secondary = None
-    if secondary is not None:
-        
-        s = (secondary**(1/2)) * 0.4 + 0.2
-        v = (secondary**(1/2)) * 0.5 + 0.5
-    else:
-        s = 0.4
-        v = 0.8 
-    
-    return QColor(rgb(h,s,v))
         
 class TreemapVis(QWidget):
     border = 10
     def __init__(self, pos=None, faultTree=None):
-#         super(self.__class__, self).__init__()
-        super().__init__()
-        
-        if not pos: pos = [50,50,900,900]
-        (x,y,w,h) =  pos
-        self.resize(w,h)
-#         self.move(x,y)
-        
-        self.outlines = []
-        
-        if faultTree!=None:
-            self.build(faultTree,pos)
+
         
         
-        self.widgets = []
-        self.setMouseTracking(True)
-        self.setWindowTitle('Treemap')
-        self.show()
         
-        self.elements = []
+        
+        
 
     def addWidget(self, widget):
 #         print 'addedWidget'
