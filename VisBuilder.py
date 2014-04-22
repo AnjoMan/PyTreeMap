@@ -7,6 +7,13 @@ from Treemap import layout
 from FaultTree import *
 from TreemapDraw import *
 
+def main():
+    print('runs')
+    
+    
+
+
+
 class doneLog(object):
     def __init__(self, message, reportFunc=None):
         self.message = message
@@ -109,6 +116,8 @@ def getFaults(FaultType, cpfFile, filter=0):
             fault.secondaryValue = value;
     
     
+    
+    #run the various methods
     faults = cpfFile.getFaults(FaultType, filter=filter)
     faultTree = buildFaultTree(faults)
     buildConnections(faults, faultTree)
@@ -134,7 +143,7 @@ class CPFfile(object):
     
     def baseLoad(self): 
         """ How to get the base load from cpfResults.mat"""
-        return self.results['baseLoad'][0]
+        return self.results['baseLoad'][0][0]
     
     def CPFloads(self): 
         """ How to get the results of CPF from cpfResults.mat"""
@@ -285,3 +294,5 @@ class CPFfile(object):
 #         return boundingRect
             
    
+if __name__ == "__main__":
+    main()

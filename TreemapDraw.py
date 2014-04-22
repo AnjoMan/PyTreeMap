@@ -77,7 +77,7 @@ class TreemapVis(QWidget):
         self.setWindowTitle('Treemap')
         self.show()
         
-        self.elements = []
+#         self.elements = []
 
     def addWidget(self, widget):
 #         print 'addedWidget'
@@ -86,8 +86,8 @@ class TreemapVis(QWidget):
         widget.show()
         self.update()
     
-    def addElement(self, element):
-        self.elements += [element]
+#     def addElement(self, element):
+#         self.elements += [element]
     
     def addOutline(self, xa, ya, xb, yb, level):
         self.outlines.append( ((xa,ya,xb,yb),level) )
@@ -109,8 +109,8 @@ class TreemapVis(QWidget):
             painter.drawLine(xb,yb,xa,yb)
             painter.drawLine(xa,yb,xa,ya)
             
-        for el in self.elements:
-            el.draw(self)
+#         for el in self.elements:
+#             el.draw(self)
 
     def mousePressEvent(self, e):
         for widget in self.widgets:
@@ -143,12 +143,18 @@ class TreemapVis(QWidget):
             if parent is not None:
                 parentRect = rectangles.pop(0)
             
+            
+            
+            #rectangle representing elements that were too small
             if len(faultList) < len(rectangles):
                 xa,ya,xb,yb = rectangles.pop()
                 leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya], parent=self, color=QColor(150,150,150));
                 leftoverRect.setColor(mLevel)
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
+            
+            
+            #rectangle representing the parent fault
             if parent is not None and parentRect:
                     fault = parent
                     xa,ya,xb,yb = parentRect
@@ -201,7 +207,7 @@ class TreeMapFault(Fault):
         newRectangle = Rectangle(pos, parent=mWindow, fault=self)
 #         newRectangle.setColor(level if level else len(self.elements))
         newRectangle.setColor(len(self.elements))
-        newRectangle.setFault(self)
+#         newRectangle.setFault(self)
         newRectangle.show()
         self.rectangles.append(newRectangle)
         return newRectangle
@@ -229,24 +235,22 @@ class Rectangle(QWidget):
     
     def setColor(self,level):
         self.color=randomColor(level, secondary=self.secondary)
-    def enterEvent(self, e):
+        
+    def enterEvent(self, e): 
         self.toggleHighlight()
-        try:
-            for element in self.fault.elements:
-                element.toggleHighlight()
-        except:
-            pass
-            #if the Rectangle has no associated faults (e.g. a generic filler replacing very small faults)
-    
+        if self.fault:
+            for el in self.fault.elements: el.toggleHighlight()
+
     def leaveEvent(self, e):
         self.toggleHighlight()
-        try:
-            for element in self.fault.elements:
-                element.toggleHighlight()
-        except:
-            pass
-            #if the rectangle has no associated faults
+        if self.fault:
+            for el in self.fault.elements: el.toggleHighlight()
+        
     
+    def toggleHighlight(self):
+        self.highlight = not self.highlight
+        self.update()
+        
     def mousePressEvent(self,e):
         if self.fault:
             print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
@@ -262,9 +266,7 @@ class Rectangle(QWidget):
 
         
         if self.highlight:
-            h,s,v = self.color.hue(), self.color.saturation(), self.color.value()
-            intensity = 80
-            brush.setColor(QColor.fromHsv(h, s*0.6, intensity))
+            brush.setColor(QColor.fromHsv(self.color.hue(), self.color.saturation() * 0.6, 80))
         else:
             brush.setColor(self.color)
 
@@ -280,9 +282,7 @@ class Rectangle(QWidget):
         
         painter.end()
     
-    def toggleHighlight(self):
-        self.highlight = not self.highlight
-        self.update()
+    
     
     def setFault(self, fault):
         self.fault = fault
