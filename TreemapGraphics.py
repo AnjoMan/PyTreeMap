@@ -17,12 +17,13 @@ def main():
 #     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
     (faults, faultTree) = getFaults(TreemapFault, CPFfile())
     
+    values = [14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]
+    
+    
     app = QApplication(sys.argv)
     
-    
-    
-    
     ex = TreemapGraphicsVis(faultTree = faultTree)
+#     ex = TreemapGraphicsVis(values = values)
     
     sys.exit(app.exec_())
 
@@ -67,7 +68,7 @@ def randomColor(level=1, secondary = None):
 class TreemapGraphicsVis(QGraphicsView):
     border = 10;
     
-    def __init__(self, pos=None, faultTree=None, values=[14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]):
+    def __init__(self, pos=None, faultTree=None, values=None):
         super().__init__()
         
         if not pos: pos = [50,50,900,900]
@@ -78,7 +79,6 @@ class TreemapGraphicsVis(QGraphicsView):
         
         self.outlines = []
         self.widgets = []
-#         self.elements = []
 
 
 
@@ -86,10 +86,10 @@ class TreemapGraphicsVis(QGraphicsView):
         self.setSceneRect(*pos)
           
             
-        if faultTree!=None:
-            self.build(faultTree,[10,10,900,900])
-        
-#         self.build(values)
+        if faultTree:
+            self.build_fromFaultTree(faultTree,[10,10,900,900])
+        elif values:
+            self.build(values)
         
         
         self.setScene(self.scene)
@@ -125,25 +125,23 @@ class TreemapGraphicsVis(QGraphicsView):
             
             
             
-#         
-#     def build(self,values):
-#         pos = self.sceneRect().getRect()
-#         
-#         x0,y0,w,h = pos
-#         
-#         self.addOutline( x0,y0,x0+w,y0+h, 1)
-#         rectangles, _ = layout(values, [x0+1,y0+1,x0+w-1,y0+h-1])
-#         
-#         for el in rectangles:
-#             xa,ya,xb,yb = el
-#             self.addWidget( Rectangle([xa,ya,xb-xa,yb-ya]))
-#             
-#         def addOutline():
-#             self.addOutline( 100,100,300,300,1)
-#         
-#         addOutline()
+        
+    def build(self,values):
+        """ build a treemap from a list of numbers """
+        pos = self.sceneRect().getRect()
+        
+        x0,y0,w,h = pos
+        
+        self.addOutline( x0,y0,x0+w,y0+h, 1)
+        rectangles, _ = layout(values, [x0+1,y0+1,x0+w-1,y0+h-1])
+        
+        for el in rectangles:
+            xa,ya,xb,yb = el
+            self.addWidget( Rectangle([xa,ya,xb-xa,yb-ya]))
+
             
-    def build(self,faultTree,square,startLimit=1, depthLimit =2):
+    def build_fromFaultTree(self,faultTree,square,startLimit=1, depthLimit =2):
+        """ build a treemap from a list of faults. """
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
         
@@ -166,18 +164,21 @@ class TreemapGraphicsVis(QGraphicsView):
             if parent is not None:
                 parentRect = rectangles.pop(0)
             
+            
+            #rectangle representing elements that were too small
             if len(faultList) < len(rectangles):
                 xa,ya,xb,yb = rectangles.pop()
-                leftoverRect = Rectangle([xa,ya,xb-xa,yb-ya]);
+                leftoverRect = Rectangle(self,[xa,ya,xb-xa,yb-ya], fill=Qt.Dense3Pattern);
                 
                 leftoverRect.setColor(mLevel)
-                self.addWidget(leftoverRect)
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
+            
+            #rectangle representing the parent fault
             if parent is not None and parentRect:
                     fault = parent
                     xa,ya,xb,yb = parentRect
-                    fault.addRectangle(self, [xa,ya,xb-xa,yb-ya], level = mLevel - startLimit)
+                    fault.addRectangle(Rectangle(self,[xa,ya,xb-xa,yb-ya]))
                     self.addOutline(xa,ya,xb,yb, mLevel+1)
             
             if mLevel >= depthLimit:
@@ -187,7 +188,7 @@ class TreemapGraphicsVis(QGraphicsView):
                 for fault,rectangle in zip(faultList,rectangles):
                     if not rectangle: continue
                     xa,ya,xb,yb = rectangle
-                    fault.addRectangle(self,[xa,ya, xb-xa, yb-ya], level=mLevel-startLimit+1)
+                    fault.addRectangle(Rectangle(self, [xa,ya,xb-xa,yb-ya]))
                     self.addOutline(xa,ya,xb,yb,mLevel+1)
     #                 mWindow.addWidget(fault)
             else:
@@ -205,9 +206,8 @@ class TreemapGraphicsVis(QGraphicsView):
                     else:
 #                         print( "{},...".format(rectangle))
                         self.addOutline(xa,ya,xb,yb,mLevel + 1)
-#                         fault.addRectangle(self, [xa, ya, xb-xa, yb-ya])
                         self.addOutline(xa+1,ya+1, xb-1, yb-1, mLevel+2)
-                        fault.addRectangle(self, [xa+1,ya+1,xb-xa-2,yb-ya-2])
+                        fault.addRectangle(Rectangle(self,[xa+1,ya+1,xb-xa-2,yb-ya-2]))
         
         recursive_build(faultTree[startLimit], square, startLimit)
 
@@ -228,19 +228,19 @@ class TreemapFault(Fault):
     
     def toggleHighlight(self):
         for rect in self.rectangles: rect.toggleHighlight()
-        
-    def addRectangle(self, mWindow, pos, level=None):
-        newRectangle = Rectangle(pos, fault=self)
-        newRectangle.setColor(len(self.elements))
+
+    def addRectangle(self,newRectangle, level=None):
+        newRectangle.setColor(randomColor(len(self.elements), self.secondary()))
         self.rectangles.append(newRectangle)
-        mWindow.addWidget(newRectangle)
         return newRectangle
+        
 
 class Rectangle(QGraphicsItem,object):
     
     
-    def __init__(self, pos, fault=None, secondary = None): #...parent=None,  color=QColor(200,100,100)):
+    def __init__(self,mGraphicsView, pos, fill=Qt.SolidPattern): #...parent=None,  color=QColor(200,100,100)):
         super().__init__()
+        
         
 #         xa,ya,xb,yb = pos
 #         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
@@ -248,11 +248,12 @@ class Rectangle(QGraphicsItem,object):
         self.pos = QRectF(*pos)
         self.color = QColor(200,100,100)
         self._highlight = False
+        self.fill = fill
+        
+        self.fault = None
         
         
-        self.fault = fault
-        if self.fault and len(self.fault.elements) > 1: self.secondary = self.fault.secondary()
-        else: self.secondary =   secondary
+        if mGraphicsView: mGraphicsView.addWidget(self)
         
         self.setCacheMode(self.DeviceCoordinateCache)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -277,21 +278,19 @@ class Rectangle(QGraphicsItem,object):
         self._highlight = not self._highlight
         self.update(self.boundingRect())
         
-      
-      
-      
-      
     def boundingRect(self):
         return QRectF(self.pos)
-    
-    def setColor(self,level):
-        self.color=randomColor(level, secondary=self.secondary)
+        
+    def setFault(self, fault): #may be unneeded
+        self.fault = fault
+        
+    def setColor(self,color):
+        self.color=color
         
     def paint(self, painter, option, widget):
         
         painter.setPen(Qt.black)
-        brush = QBrush(Qt.SolidPattern) if self.fault else QBrush(Qt.Dense3Pattern)
-        
+        brush = QBrush(self.fill)
         if self._highlight: brush.setColor(QColor.fromHsv(self.color.hue(), self.color.saturation() * 0.6, 80))
         else: brush.setColor(self.color)
             
@@ -303,8 +302,7 @@ class Rectangle(QGraphicsItem,object):
     
     
     
-    def setFault(self, fault): #may be unneeded
-        self.fault = fault
+    
         
 #         add annotations
 #         painter.setPen(Qt.black)
