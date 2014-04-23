@@ -413,7 +413,10 @@ class Fault(object):
     
     def __init__(self,listing, reduction = None):
         #listing is a dictionary containing: label, elements
-        self.reduction = reduction
+        
+        self.value = reduction
+        self._subValue = None
+        
         self.label = listing['label'] if 'label' in listing else 'none'
         if 'label' in listing: del listing['label']
         
@@ -495,25 +498,30 @@ class Fault(object):
             return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
         except: return 0
             
-    def value(self):
-        return self.reduction
-    
+#     def value(self):
+#         return self.reduction
+    @property
     def secondary(self):
         try:
-            return self.secondaryValue
+            return self._secondary
         except:
             
             if len(self.elements) == 1:
-                self.secondaryValue = 0
+                self._secondary = None
             else:
                 import itertools
                 distances = [ elA.distanceFrom(elB) for elA, elB in itertools.combinations(self.elements,2)]
-                self.secondaryValue = mean(distances)
+                self._secondary = mean(distances)
             
-            return self.secondaryValue
+            return self._secondary
 
-    
-    def subValue(self): return self.value() + sum([subFault.subValue() for subFault in self.connections])
+    @secondary.setter
+    def secondary(self,x):
+        self._secondary = x
+        
+    @property
+    def subValue(self): 
+        return self._subValue or self.value + sum([subFault.subValue for subFault in self.connections])
     
     def getElements(self):
         return self.elements

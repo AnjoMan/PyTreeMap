@@ -88,13 +88,13 @@ def getFaults(FaultType, cpfFile, filter=0):
     @doneLog('Context Limits Set')
     def setContextLimits(FaultType, faults):
         """ Set limits for context getter, allowing fault to be evaluated in context of its level. Used by Tree. """
-        values = [fault.value() for fault in faults]
+        values = [fault.value for fault in faults]
         FaultType.setGlobalContext(min(values),  max(values))
         for level, levelFaults in faultTree.items():
-            values = [fault.value() for fault in levelFaults]
+            values = [fault.value for fault in levelFaults]
             FaultType.setLevelContext(level, min(values), max(values))
             
-            values = [fault.subValue() for fault in levelFaults]
+            values = [fault.subValue for fault in levelFaults]
             FaultType.setCumulativeContext(level, min(values), max(values))
     
     
@@ -104,16 +104,26 @@ def getFaults(FaultType, cpfFile, filter=0):
         
         #normalize secondaries
         def normalize(x):
+            #identify indices of  None
+            nonIndexes = [i for i, el in enumerate(x) if el is None]
+            
+            #reeplace None with 0 so we can do math on it
+            x = [el if el else 0 for el in x]
+            
+            #perform mask
             x = array(x)
             x = x - min(x)
             x = x / max(x)
+            
+            #put Nones back where indicated by nonIndexes
+            x = [el if i not in nonIndexes else None for i,el in enumerate(x) ]
             return x
             
         #initialize and get secondary values for all faults.
-        secondaryValues = [fault.secondary() for fault in faults]
+        secondaryValues = [fault.secondary for fault in faults]
         secondaryValues = normalize(secondaryValues)
         for value, fault in zip(secondaryValues, faults):
-            fault.secondaryValue = value;
+            fault.secondary = value;
     
     
     

@@ -1,7 +1,17 @@
-from itertools import permutations, combinations, product
-from numpy import mean
+class Fault(object):
+    
+    def __init__(self, value):
+        self.value = value
+        self._subValue = None
+    
+    
+    @property
+    def subValue(self):
+        return self._subValue or self.value * 10
 
-for a,b in product( [1,2,3], ['a','b','c']):
-    print(a,b)
+
+mFault = Fault(20)
 
 
+print(mFault.value)
+print(mFault.subValue)

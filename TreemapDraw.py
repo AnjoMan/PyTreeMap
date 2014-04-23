@@ -136,9 +136,9 @@ class TreemapVis(QWidget):
                 return None
             
             #lay out faults
-            rectangles, leftovers = layout(([parent.value()] if parent is not None else [])+[fault.subValue() for fault in faultList], square)
+            rectangles, leftovers = layout(([parent.value] if parent is not None else [])+[fault.subValue for fault in faultList], square)
             
-#             rectangles, leftovers = layout(([parent.value()] if parent is not None else [])+[fault.value() for fault in faultList], square)
+#             rectangles, leftovers = layout(([parent.value] if parent is not None else [])+[fault.value for fault in faultList], square)
             
             if parent is not None:
                 parentRect = rectangles.pop(0)
@@ -223,7 +223,7 @@ class Rectangle(QWidget):
         
         self.fault = fault
         if self.fault and len(self.fault.elements) > 1:
-            self.secondary = self.fault.secondary()
+            self.secondary = self.fault.secondary
         else:
             self.secondary =   secondary
             
@@ -253,7 +253,7 @@ class Rectangle(QWidget):
         
     def mousePressEvent(self,e):
         if self.fault:
-            print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
+            print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value, self.width()*self.height()))
         else: print(self.fault)
         
     def paintEvent(self, e):

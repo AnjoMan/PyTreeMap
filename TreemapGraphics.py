@@ -117,14 +117,6 @@ class TreemapGraphicsVis(QGraphicsView):
             painter.drawLine(xb,ya,xb,yb)
             painter.drawLine(xb,yb,xa,yb)
             painter.drawLine(xa,yb,xa,ya)
-            
-            
-            
-            
-            
-            
-            
-            
         
     def build(self,values):
         """ build a treemap from a list of numbers """
@@ -157,7 +149,7 @@ class TreemapGraphicsVis(QGraphicsView):
                 return None
             
             #lay out faults
-            rectangles, leftovers = layout(([parent.value()] if parent is not None else [])+[fault.subValue() for fault in faultList], square)
+            rectangles, leftovers = layout(([parent.value] if parent is not None else [])+[fault.subValue for fault in faultList], square)
             
 #             rectangles, leftovers = layout(([parent.value()] if parent is not None else [])+[fault.value() for fault in faultList], square)
             
@@ -170,7 +162,7 @@ class TreemapGraphicsVis(QGraphicsView):
                 xa,ya,xb,yb = rectangles.pop()
                 leftoverRect = Rectangle(self,[xa,ya,xb-xa,yb-ya], fill=Qt.Dense3Pattern);
                 
-                leftoverRect.setColor(mLevel)
+                leftoverRect.color = randomColor(mLevel)
                 self.addOutline(xa,ya,xb,yb,mLevel+1)
             
             
@@ -230,7 +222,7 @@ class TreemapFault(Fault):
         for rect in self.rectangles: rect.toggleHighlight()
 
     def addRectangle(self,newRectangle, level=None):
-        newRectangle.setColor(randomColor(len(self.elements), self.secondary()))
+        newRectangle.color = randomColor(len(self.elements), self.secondary)
         self.rectangles.append(newRectangle)
         return newRectangle
         
@@ -247,7 +239,7 @@ class Rectangle(QGraphicsItem,object):
         
         self.pos = QRectF(*pos)
         self.color = QColor(200,100,100)
-        self._highlight = False
+        self.highlight = False
         self.fill = fill
         
         self.fault = None
@@ -275,33 +267,22 @@ class Rectangle(QGraphicsItem,object):
             for el in self.fault.elements: el.toggleHighlight()
     
     def toggleHighlight(self, list=None):
-        self._highlight = not self._highlight
+        self.highlight = not self.highlight
         self.update(self.boundingRect())
         
     def boundingRect(self):
         return QRectF(self.pos)
         
-    def setFault(self, fault): #may be unneeded
-        self.fault = fault
-        
-    def setColor(self,color):
-        self.color=color
         
     def paint(self, painter, option, widget):
         
         painter.setPen(Qt.black)
         brush = QBrush(self.fill)
-        if self._highlight: brush.setColor(QColor.fromHsv(self.color.hue(), self.color.saturation() * 0.6, 80))
+        if self.highlight: brush.setColor(QColor.fromHsv(self.color.hue(), self.color.saturation() * 0.6, 80))
         else: brush.setColor(self.color)
             
         painter.setBrush(brush)
         painter.drawRect(self.pos)
-    
-    
-    
-    
-    
-    
     
         
 #         add annotations
