@@ -131,14 +131,11 @@ if __name__ == '__main__':
     
     
     (faults, faultTree) = getFaults(TreeMapFault, mCPFfile, filter=0)
+    oneLineList = mCPFfile.Branches + mCPFfile.Buses # order is important here.
     
     app = QtGui.QApplication(sys.argv)
-    mOneline = OneLineWidget([0,30,900,900], mCPFfile.boundingRect())
+    mOneline = OneLineWidget([0,30,900,900],oneLineList)
     
-    mOneline.addElement(elements[Branch])
-    mOneline.addElement(elements[Bus])
-#     [mOneline.addElement(el) for el in elements[Branch]]
-#     [mOneline.addElement(el) for el in elements[Bus]]
     mTreemap = None
     mTreemap = TreemapVis(pos = [50,50,900,900],faultTree=faultTree)
     mVis = Visualization( oneline = mOneline, treemap=mTreemap) 

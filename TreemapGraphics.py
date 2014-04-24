@@ -12,10 +12,11 @@ def main():
     from TreemapGraphics import TreemapFault
     
     
+    file = 'cpfResults_4branch'
     
     
 #     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
-    (faults, faultTree) = getFaults(TreemapFault, CPFfile())
+    (faults, faultTree) = getFaults(TreemapFault, CPFfile(file))
     
     values = [14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]
     
@@ -23,7 +24,7 @@ def main():
     app = QApplication(sys.argv)
     
     ex = TreemapGraphicsVis(faultTree = faultTree)
-#     ex = TreemapGraphicsVis(values = values)
+#     ex2 = TreemapGraphicsVis( pos=[1100,50,400,400],values = values, name="Treemap of Random Values")
     
     sys.exit(app.exec_())
 
@@ -68,7 +69,7 @@ def randomColor(level=1, secondary = None):
 class TreemapGraphicsVis(QGraphicsView):
     border = 10;
     
-    def __init__(self, pos=None, faultTree=None, values=None):
+    def __init__(self, pos=None, faultTree=None, values=None, name="TreemapGraphics"):
         super().__init__()
         
         if not pos: pos = [50,50,900,900]
@@ -83,7 +84,7 @@ class TreemapGraphicsVis(QGraphicsView):
 
 
         self.scene = QGraphicsScene(self)
-        self.setSceneRect(*pos)
+        self.setSceneRect(0,0,w,h)
           
             
         if faultTree:
@@ -96,9 +97,9 @@ class TreemapGraphicsVis(QGraphicsView):
         self.setCacheMode(QGraphicsView.CacheBackground)
 #         self.setRenderHint(QPainter.Antialiasing)
         
-        self.setWindowTitle('TreemapGraphics')
+        self.setWindowTitle(name)
         self.show()
-        self.scale(.9,.9)
+#         self.scale(.99
     
     def addWidget(self,widget):
         self.widgets.append(widget)
@@ -129,7 +130,7 @@ class TreemapGraphicsVis(QGraphicsView):
         
         for el in rectangles:
             xa,ya,xb,yb = el
-            self.addWidget( Rectangle([xa,ya,xb-xa,yb-ya]))
+            Rectangle(self,[xa,ya,xb-xa,yb-ya])
 
             
     def build_fromFaultTree(self,faultTree,square,startLimit=1, depthLimit =2):
@@ -223,6 +224,7 @@ class TreemapFault(Fault):
 
     def addRectangle(self,newRectangle, level=None):
         newRectangle.color = randomColor(len(self.elements), self.secondary)
+        newRectangle.fault = self
         self.rectangles.append(newRectangle)
         return newRectangle
         
@@ -236,7 +238,7 @@ class Rectangle(QGraphicsItem,object):
         
 #         xa,ya,xb,yb = pos
 #         xb,yb = xb+1,yb+1 #widget space is defined from left of xa to left of xb, I need to expand it to [left of xa, right of xb]. (same argument for y)
-        
+
         self.pos = QRectF(*pos)
         self.color = QColor(200,100,100)
         self.highlight = False
@@ -253,9 +255,9 @@ class Rectangle(QGraphicsItem,object):
         
     
     def mousePressEvent(self, event): 
-        print(str(self))
         if self.fault:
-            print("{}. reduced loadability: {:.0f}, area: {:d}.".format(self.fault, self.fault.value(), self.width()*self.height()))
+            print("{}. reduced loadability: {:.0f}, area: {:.0f}.".format(self.fault, self.fault.value, self.pos.width()*self.pos.height()))
+        else: print(str(self))
             
     def hoverEnterEvent(self, event): 
         self.toggleHighlight()
@@ -284,10 +286,13 @@ class Rectangle(QGraphicsItem,object):
         painter.setBrush(brush)
         painter.drawRect(self.pos)
     
-        
+#         
 #         add annotations
 #         painter.setPen(Qt.black)
 #         painter.setFont(QFont('serif', 12))
+        
+#         print(self.x(), self.y())
+        QGraphicsSimpleTextItem(", ".join([el.shortRepr() for el in self.fault.elements]), parent=self).setPos(*self.pos.getRect()[0:2])
 #         if self.fault:
 #             painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
         

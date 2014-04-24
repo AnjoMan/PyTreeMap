@@ -26,14 +26,15 @@ def main():
     
     
     mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
-    elements = mCPFfile.getElements()
+    mElements = mCPFfile.Branches + mCPFfile.Buses
+    
+    
+    
     
     app = QApplication(sys.argv)
     
-    ex = OneLineWidget([0,0,800,800], mCPFfile.boundingRect())
+    ex = OneLineWidget([0,0,800,800], mElements)
     
-    ex.addElement(elements[Branch])
-    ex.addElement(elements[Bus])
     sys.exit(app.exec_())
     
     
@@ -57,12 +58,14 @@ def boundingRect(elList):
 class OneLineWidget(QGraphicsView):
     """ A widget in which a oneline is drawn. contains a graphics scene """
     
-    def __init__(self, shape, diagramBound = None):
+    def __init__(self, shape, elList, diagramBound = None):
         QGraphicsView.__init__(self)
         
         x,y,w,h = shape
         self.move(x,y)
         self.resize(w,h)
+        
+        diagramBound = boundingRect(elList)
         
         #build a graphicsscene
         self.scene =  QGraphicsScene(self)
@@ -84,6 +87,9 @@ class OneLineWidget(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         
         self.elements = []
+        
+        
+        self.addElement(elList)
         self.scale(scale,scale)
         self.setWindowTitle('Oneline')
 #         self.show()

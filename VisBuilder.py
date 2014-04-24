@@ -151,6 +151,22 @@ class CPFfile(object):
     def __init__(self, fileName='cpfResults_case30_2level'):
         self.results = scipy.io.loadmat(fileName, struct_as_record=False)
     
+    @property
+    def Branches(self):
+        return list( self.getElements()[Branch].values() )
+    
+    @property
+    def Buses(self):
+        return  list( self.getElements()[Bus].values() )
+    
+    @property
+    def Transformers(self):
+        return  list( self.getElements()[Transformer].values() )
+    
+    @property
+    def Generators(self):
+        return  list( self.getElements()[Gen].values() )
+    
     def baseLoad(self): 
         """ How to get the base load from cpfResults.mat"""
         return self.results['baseLoad'][0][0]
@@ -291,9 +307,9 @@ class CPFfile(object):
             log('Grid Elements Created')
             return self.elements
     
-    def boundingRect(self, elements=None):
+    def boundingRect(self, elList=None):
         
-        if not elements:
+        if not elList:
             elList = self.getElementList()
         
         return boundingRect(elList)

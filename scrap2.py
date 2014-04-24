@@ -1,17 +1,46 @@
-class Fault(object):
+from VisBuilder import CPFfile
+from PowerNetwork import Fault
+
+
+
+
+
+
+from PySide.QtCore import *
+from PySide.QtGui import *
+import sys
+
+def main():
     
-    def __init__(self, value):
-        self.value = value
-        self._subValue = None
     
     
-    @property
-    def subValue(self):
-        return self._subValue or self.value * 10
+    mFile = CPFfile()
+    
+    faults = mFile.getFaults(Fault)
+    elements = mFile.getElements()
+    
+    
+    
+    
+    
+    
+    
+    app = QApplication(sys.argv)
+    ex = DetailsWidget()
+    
+    sys.exit(app.exec_())
 
 
-mFault = Fault(20)
+
+class DetailsWidget(QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.setGeometry(400,300,500,200)
+        self.setWindowTitle('Fault Details')
+        self.show()
 
 
-print(mFault.value)
-print(mFault.subValue)
+if __name__ == "__main__":
+    main()
