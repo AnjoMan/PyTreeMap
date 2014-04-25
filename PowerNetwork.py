@@ -136,10 +136,12 @@ class Element(QGraphicsItem,object ):
     hColor = {False: QColor("#b2b8c8"), True: QColor("#e45353")}
 #     hColor = {False: QColor("#b6cdc1"), True: QColor("#e45353")}
     
-    def __init__(self,id, pos):
+    def __init__(self,id, pos, connected=None):
         super(Element, self).__init__()
         self.id=id
         self.pos = pos
+        
+        self.connected = connected or []
         
         #
 #         if oneline != None:
@@ -152,7 +154,11 @@ class Element(QGraphicsItem,object ):
         self.highlight = False
     
     
-    def __repr__(self): return "{} {:04d}".format(self.__class__.__name__ ,self.id)
+    def html(self):
+        return "<p>{}</p>{}".format(self.__class__.__name__, self.id)
+    def __repr__(self): 
+        string = "{:6s} {:04d}".format(self.__class__.__name__ ,self.id)
+        return string
     
     def shortRepr(self): 
 #         return "{:.2s}{:d}".format(self.__class__.__name__, self.id)
@@ -264,6 +270,15 @@ class Branch(Element):
     color = '#DB0058'
     radius = 1
     
+    def __init__(self,id, pos, buses=None):
+        
+        super().__init__(id,pos, buses)
+        
+        #assign self to buses
+        if buses:
+            for bus in buses: bus.adjacent.append(self)
+                
+        
     def boundingRect(self):
         x,y = array(self.pos).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
@@ -348,7 +363,7 @@ class Gen(Element):
     color = '#FF9700'
     def __init__(self, id, bus):
         super(self.__class__, self).__init__(id, [None,None])
-        self.bus = bus
+        self.connected = [bus] 
     
     def getPos(self):
         return self.bus.getPos()
@@ -367,6 +382,10 @@ class Transformer(Element):
         self.elements = args[1]
         args = (args[0], [None, None])
         super(self.__class__, self).__init__(*args)
+    
+    @property
+    def adjacent(self):
+        return self.elements
     
     def getPos(self):
         pos = []
@@ -506,6 +525,7 @@ class Fault(object):
             
 #     def value(self):
 #         return self.reduction
+
     @property
     def secondary(self):
         try:
@@ -545,6 +565,14 @@ class Fault(object):
         strip = newFault.strip(element)
         newFault.siblings += strip
         return newFault
+        
+    def html_elements(self):
+        elList = "<ul>{}</ul>".format( "".join([ "<li>{}</li>".format(el.html()) for el in self.elements]))
+        return "<div class='info'><p>Elements:</p>{}</div>".format(elList)
+    def html_reduction(self):
+        return "<div class='info'><p>Reduction:</p>{:.3f}MW</div>".format(self.value)
+    def html(self):
+        return "<h>Fault</h>{}{}".format(self.html_elements(), self.html_reduction())
 
 class Line:
     """

@@ -232,6 +232,7 @@ class CPFfile(object):
         
             base = self.baseSystem()
             
+            #get a list of buses attached to each branch
             branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
             nBranches = len(base.branch)
             nBusses = len(base.bus)
@@ -296,7 +297,9 @@ class CPFfile(object):
             
             
             elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
-            elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el in zip(range(1,nBranches+1), branchPos)}
+            
+            branch_buses = [ [elements[Bus][key] for key in el] for el in branchBusEnds]
+            elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
             elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
     
             if len(base.trans) > 0: elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
