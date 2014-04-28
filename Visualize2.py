@@ -6,7 +6,7 @@
 from PowerNetwork import *
 from FaultTree import *
 # from TreemapDraw import *
-
+from DetailsWidget import DetailsWidget
 from TreemapGraphics import TreemapGraphicsVis, TreemapFault
 from VisBuilder import *
 import sys
@@ -58,11 +58,13 @@ def main():
     oneLineList = mCPFfile.Branches + mCPFfile.Buses # order is important here.
     
     app = QtGui.QApplication(sys.argv)
-    mOneline = OneLineWidget([0,30,900,900],oneLineList)
     
-    mTreemap = None
-    mTreemap = TreemapGraphicsVis(pos = [50,50,900,900],faultTree=faultTree)
-    mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
+    
+    mDetails = DetailsWidget([0,0,500,200])
+    
+    mOneline = OneLineWidget(oneLineList, [0,0,900,700], details = mDetails)
+    mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree, details = mDetails)
+    mVis = Visualization( oneline = mOneline, treemap=mTreemap, details = mDetails) 
     
     sys.exit(app.exec_())
     
@@ -86,11 +88,12 @@ def main():
 
 class Visualization(QMainWindow):
     
-    def __init__(self, treemap = None, oneline = None):
+    def __init__(self, treemap = None, oneline = None, details = None):
         super(self.__class__, self).__init__()
         
         self.oneline = oneline
         self.treemap = treemap
+        
         
         oneline.setParent(self)
         treemap.setParent(self)
@@ -98,7 +101,15 @@ class Visualization(QMainWindow):
         
         layout = QHBoxLayout()
         layout.addWidget(self.treemap)
-        layout.addWidget(self.oneline)
+        
+        if details:
+            v = QVBoxLayout()
+            v.addWidget(oneline)
+            v.addWidget(details)
+            layout.addLayout(v)
+        elif oneline:
+            layout.addWidget(self.oneline)
+        
         
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

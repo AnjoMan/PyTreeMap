@@ -23,6 +23,7 @@ def main():
     
     from PowerNetwork import Bus, Branch
     from VisBuilder import CPFfile
+    from DetailsWidget import DetailsWidget
     
     
     mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
@@ -33,8 +34,9 @@ def main():
     
     app = QApplication(sys.argv)
     
-    ex = OneLineWidget([0,0,800,800], mElements)
-    
+    mDetails = DetailsWidget()
+    mOneline = OneLineWidget(mElements,shape = [0,0,900,700], details = mDetails)
+    mVis = Vis(oneline =mOneline, details = mDetails)
     sys.exit(app.exec_())
     
     
@@ -55,18 +57,66 @@ def boundingRect(elList):
     return boundingRect
     
 
+
+
+class Vis(QMainWindow):
+    
+    def __init__(self, oneline = None, details = None):
+        super().__init__()
+        
+        self.oneline = oneline
+        
+        self.widget = QWidget()
+        self.setCentralWidget(self.widget)
+        
+        
+        
+        oneline.setParent(self.widget)
+        
+        layout = QGridLayout()
+        
+        
+        self.widget.setLayout(layout)
+        
+#         layout.addLayout(self.widget)
+        
+        layout.setSpacing(0)
+        layout.addWidget(details,1,0,3,1)
+        layout.addWidget(oneline,4,0,1,1)
+        
+        
+        
+        
+        
+        
+        self.setGeometry(20,20,900,900)
+        self.setWindowTitle('Visualize')
+        
+        self.show()
+        
+        
+#         layout.setContentsMargins(0, 0, 0, 0)
+#         layout.setSpacing(0)
+
+    
+        
+#         log('visualization created')
+
+
 class OneLineWidget(QGraphicsView):
     """ A widget in which a oneline is drawn. contains a graphics scene """
     
-    def __init__(self, shape, elList, diagramBound = None):
+    def __init__(self, elList, shape=None,details = None):
         QGraphicsView.__init__(self)
         
-        x,y,w,h = shape
-        self.move(x,y)
-        self.resize(w,h)
+        if shape:
+            x,y,w,h =  shape
+            self.move(x,y)
+            self.resize(w,h)
         
         diagramBound = boundingRect(elList)
         
+        self.details = details
         #build a graphicsscene
         self.scene =  QGraphicsScene(self)
         
@@ -140,12 +190,11 @@ class Element(QGraphicsItem,object ):
         super(Element, self).__init__()
         self.id=id
         self.pos = pos
+        self.faults = []
         
-        self.connected = connected or []
+        if connected: self.connected = list(connected)
+        else: self.connected = []
         
-        #
-#         if oneline != None:
-#             self.graph = weakref.ref(oneline)
         self.setAcceptHoverEvents(True)
         self.newPos = QPointF()
         self.setCacheMode(self.DeviceCoordinateCache)
@@ -153,9 +202,26 @@ class Element(QGraphicsItem,object ):
         self.setZValue(-1)
         self.highlight = False
     
+    def html_name(self):
+        return "<p>{}</p>{}".format(self.__class__.__name__, self.id)
+        
+    def html_connected(self):
+        elList = "<ul>{}</ul>".format( "".join([ "<li>{}</li>".format(el.html_name()) for el in self.connected]))
+        return "<div class='info'><p>Connections:</p>{}</div>".format(elList)
+        
+        
+    def html_percentage(self):
+        return "<div class='info'><p>Pct. Loadability:</p>{:.3f}%</div>".format(-1)
+        
+        
+
     
     def html(self):
-        return "<p>{}</p>{}".format(self.__class__.__name__, self.id)
+        return "<div class='el'><h>{}</h>{}{}</div>".format( str(self), self.html_connected(), self.html_percentage())
+        
+    def setDetails(self):
+        if self.scene().parent().details:
+            self.scene().parent().details.setContent(self.html())
     def __repr__(self): 
         string = "{:6s} {:04d}".format(self.__class__.__name__ ,self.id)
         return string
@@ -173,13 +239,14 @@ class Element(QGraphicsItem,object ):
     
     def __hash__(self): return hash(str(self))
     
+    
     def getGeo(self): return Element.geo[self.__class__][self.id]
     def getPos(self): return self.pos
     
     def secondary(self): return self.getGeo()
     
     def addFault(self,fault):
-        try: self.faults += [fault]
+        try: self.faults.append(fault)
         except AttributeError: self.faults = [fault]
             
     def boundingRect(self):
@@ -245,11 +312,10 @@ class Element(QGraphicsItem,object ):
         print(str(self))
         self.toggleHighlight()
         
-        try:
-            for fault in self.faults:
-                fault.toggleHighlight()
-        except:
-            pass
+        for fault in self.faults: fault.toggleHighlight()
+        
+        
+        self.setDetails()
         
     
     def toggleHighlight(self):
@@ -273,10 +339,11 @@ class Branch(Element):
     def __init__(self,id, pos, buses=None):
         
         super().__init__(id,pos, buses)
+#         self.connected = list(buses) #call list to ensure iterable
         
         #assign self to buses
         if buses:
-            for bus in buses: bus.adjacent.append(self)
+            for bus in buses: bus.connected.append(self)
                 
         
     def boundingRect(self):
@@ -362,34 +429,43 @@ class Bus(Element):
 class Gen(Element):
     color = '#FF9700'
     def __init__(self, id, bus):
-        super(self.__class__, self).__init__(id, [None,None])
-        self.connected = [bus] 
+        super().__init__(id, [None,None],[bus])
+#         self.bus = bus
+#         self.connected = [bus] 
+
+    @property
+    def bus(self):
+        return self.connected
+    
+    
     
     def getPos(self):
-        return self.bus.getPos()
+        return self.connected.getPos()
     
     def boundingRect(self):
-        return self.bus.boundingRect()
+        return self.connected.boundingRect()
         
     def distanceFrom(self, other):
-        return other.distanceFrom(self.bus)
+        return other.distanceFrom(self.connected)
 
 class Transformer(Element):
     color = '#80E800'
     
-    def __init__(self, *args):
-        self.id = id
-        self.elements = args[1]
-        args = (args[0], [None, None])
-        super(self.__class__, self).__init__(*args)
+#     def __init__(self, id, elements):
+# #         self.elements = elements
+#         super().__init__(id, [None,None])
     
-    @property
-    def adjacent(self):
-        return self.elements
+#     @property
+#     def connected(self):
+#         return self.elements
+#     
+#     @connected.setter
+#     def connected(self):
+#         pass
     
     def getPos(self):
         pos = []
-        for el in self.elements:
+        for el in self.connected:
             if type(el) is Branch:
                 pos += el.getPos()
             else:
@@ -402,7 +478,7 @@ class Transformer(Element):
     
     
     def boundingRect(self):
-        rects = array([list(el.boundingRect().getRect()) for el in self.elements])
+        rects = array([list(el.boundingRect().getRect()) for el in self.connected])
         points = [rects[:,0].transpose(), rects[:,1].transpose(), rects[:,0]+rects[:,2], rects[:,1] + rects[:,3]]
         
         x0,y0,xn,yn = min(points[0]), min(points[1]), max(points[2]), max(points[3])
@@ -414,12 +490,12 @@ class Transformer(Element):
     def distanceFrom(self,other):
         if type(other) == type(self):
             distances = []
-            for EL in self.elements:
-                for el in other.elements:
+            for EL in self.connected:
+                for el in other.connected:
                     distances.append(EL.distanceFrom(el))
             return min(distances)
         else:
-            return min([el.distanceFrom(other) for el in self.elements])
+            return min([el.distanceFrom(other) for el in self.connected])
         
                 
                 
@@ -567,12 +643,14 @@ class Fault(object):
         return newFault
         
     def html_elements(self):
-        elList = "<ul>{}</ul>".format( "".join([ "<li>{}</li>".format(el.html()) for el in self.elements]))
+        elList = "<ul>{}</ul>".format( "".join([ "<li>{}</li>".format(el.html_name()) for el in self.elements]))
         return "<div class='info'><p>Elements:</p>{}</div>".format(elList)
     def html_reduction(self):
         return "<div class='info'><p>Reduction:</p>{:.3f}MW</div>".format(self.value)
     def html(self):
-        return "<h>Fault</h>{}{}".format(self.html_elements(), self.html_reduction())
+        return "<div class='el'><h>Fault</h>{}{}</div>".format(self.html_elements(), self.html_reduction())
+    
+    
 
 class Line:
     """

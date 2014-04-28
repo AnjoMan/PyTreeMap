@@ -23,7 +23,7 @@ def main():
     
     app = QApplication(sys.argv)
     
-    ex = TreemapGraphicsVis(faultTree = faultTree)
+    ex = TreemapGraphicsVis(pos = [100,100,900,900],faultTree = faultTree)
 #     ex2 = TreemapGraphicsVis( pos=[1100,50,400,400],values = values, name="Treemap of Random Values")
     
     sys.exit(app.exec_())
@@ -69,10 +69,10 @@ def randomColor(level=1, secondary = None):
 class TreemapGraphicsVis(QGraphicsView):
     border = 10;
     
-    def __init__(self, pos=None, faultTree=None, values=None, name="TreemapGraphics"):
+    def __init__(self, pos=None, faultTree=None, values=None, name="TreemapGraphics", details= None):
         super().__init__()
         
-        if not pos: pos = [50,50,900,900]
+#         if not pos: pos = [50,50,900,900]
         
         (x,y,w,h) = pos
         self.resize(w,h)
@@ -80,15 +80,15 @@ class TreemapGraphicsVis(QGraphicsView):
         
         self.outlines = []
         self.widgets = []
-
+        self.details = details
 
 
         self.scene = QGraphicsScene(self)
-        self.setSceneRect(0,0,w,h)
+        self.setSceneRect(10,10,w-20,h-20)
           
             
         if faultTree:
-            self.build_fromFaultTree(faultTree,[10,10,900,900])
+            self.build_fromFaultTree(faultTree,[0,0,w-20,h-20])
         elif values:
             self.build(values)
         
@@ -257,7 +257,10 @@ class Rectangle(QGraphicsItem,object):
     def mousePressEvent(self, event): 
         if self.fault:
             print("{}. reduced loadability: {:.0f}, area: {:.0f}.".format(self.fault, self.fault.value, self.pos.width()*self.pos.height()))
+            self.setDetails()
         else: print(str(self))
+        
+        
             
     def hoverEnterEvent(self, event): 
         self.toggleHighlight()
@@ -296,7 +299,9 @@ class Rectangle(QGraphicsItem,object):
 #         if self.fault:
 #             painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
         
-                    
+    def setDetails(self):
+        if self.scene().parent().details:
+            self.scene().parent().details.setContent(self.fault.html())
 
 if __name__ == "__main__":
     main()

@@ -299,7 +299,7 @@ class CPFfile(object):
             elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
             
             branch_buses = [ [elements[Bus][key] for key in el] for el in branchBusEnds]
-            elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el])) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
+            elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el]), buses) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
             elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
     
             if len(base.trans) > 0: elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
