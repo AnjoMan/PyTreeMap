@@ -680,26 +680,17 @@ class Line:
     def getMidpoint(self):
         
         if not hasattr(self, 'midPoint'):
+            branch_geo =array([self.nodesX,self.nodesY]).transpose() )
+            
             #get distance between each point
-            deltaDistances = lambda array: [b-a for a,b in zip(array[0:-1],array[1:])]
+            distances = [0] + list( sqrt(sum(square(branch_geo[1:,:] - branch_geo[0:-1,:])),1)) )
             
-            dxs,dys = deltaDistances(self.nodesX), deltaDistances(self.nodesY)
+            ltHalf = where(distances < sum(distances)/2)[0][-1] 
+                #index the tuple returned by where, then take the last index for which the condition is still true
+
+            percentAlong = (sum(distances)/2 - cumsum(distances)[lt_half])/ distances[lt_half+1]
             
-            
-            distances = [0] + [ sqrt(dx**2 + dy**2) for dx,dy in zip(dxs, dys)]  
-            
-            length = sum(distances);
-            
-            cumDistances = cumsum(distances)
-            
-            #max index of distances s.t. cumsum <= half total length
-            ltHalves = [index for index,value in enumerate(cumDistances) if value <= length/2]
-            lt_half = max(ltHalves)
-            
-            percentAlong = (length/2 - cumDistances[lt_half])/ distances[lt_half+1]
-            
-            lineBisect = lambda array: array[0] + percentAlong * (array[1]-array[0])
-            xM,yM = lineBisect(self.nodesX[lt_half:lt_half+2]), lineBisect(self.nodesY[lt_half:lt_half+2])
+            xM,yM = branch_geo[ltHalf,:] + percentAlong * ( branch_geo[ltHalf+1] - branch_geo[ltHalf])
             
             self.midPoint = xM,yM
         
