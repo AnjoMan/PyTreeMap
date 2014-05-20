@@ -680,10 +680,10 @@ class Line:
     def getMidpoint(self):
         
         if not hasattr(self, 'midPoint'):
-            branch_geo =array([self.nodesX,self.nodesY]).transpose() )
+            branch_geo =array([self.nodesX,self.nodesY]).transpose() 
             
             #get distance between each point
-            distances = [0] + list( sqrt(sum(square(branch_geo[1:,:] - branch_geo[0:-1,:])),1)) )
+            distances = [0] + list( sqrt(sum(square(branch_geo[1:,:] - branch_geo[0:-1,:])),1)) 
             
             ltHalf = where(distances < sum(distances)/2)[0][-1] 
                 #index the tuple returned by where, then take the last index for which the condition is still true
