@@ -49,5 +49,8 @@ coverage.xml
 *.log
 *.pot
 
+#Matlab autosaves
+*.asv
+
 # Sphinx documentation
 docs/_build/

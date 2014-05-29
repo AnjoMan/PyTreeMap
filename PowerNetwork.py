@@ -26,7 +26,7 @@ def main():
     from DetailsWidget import DetailsWidget
     
     
-    mCPFfile = CPFfile('cpfResults_case118') #open a default cpf file
+    mCPFfile = CPFfile('cpfResults_case30_1level') #open a default cpf file
     mElements = mCPFfile.Branches + mCPFfile.Buses
     
     
@@ -193,7 +193,10 @@ class Element(QGraphicsItem,object ):
         self.faults = []
         
         if connected: self.connected = list(connected)
-        else: self.connected = []
+            #self.connected will always be a list.
+        else:
+            self.connected = []
+            print(self)
         
         self.setAcceptHoverEvents(True)
         self.newPos = QPointF()
@@ -344,6 +347,7 @@ class Branch(Element):
         #assign self to buses
         if buses:
             for bus in buses: bus.connected.append(self)
+            print(self)
                 
         
     def boundingRect(self):
@@ -400,8 +404,10 @@ class Branch(Element):
         elif type(other) is Branch: #if the other is a line, 
             return DC.lineToLine(self.pos, other.pos)[0]
         else:
-            return DC.pointToLine(self.pos, other.getPos())[0]
-            
+            try:
+                return DC.pointToLine(self.pos, other.getPos())[0]
+            except:
+                print('wait');
         
         
 class Bus(Element): 
@@ -435,21 +441,24 @@ class Gen(Element):
 
     @property
     def bus(self):
-        return self.connected
+        return self.connected[0]
     
     
     
     def getPos(self):
-        return self.connected.getPos()
+        return self.connected[0].getPos()
     
     def boundingRect(self):
-        return self.connected.boundingRect()
+        return self.connected[0].boundingRect()
         
     def distanceFrom(self, other):
-        return other.distanceFrom(self.connected)
+        return other.distanceFrom(self.connected[0])
 
 class Transformer(Element):
     color = '#80E800'
+    
+    def __init__(self, id, elements):
+        super().__init__(id,[], elements)
     
 #     def __init__(self, id, elements):
 # #         self.elements = elements
@@ -475,7 +484,9 @@ class Transformer(Element):
         return pos
 #         return mean(pos,0)
     
-    
+    def toggleHighlight(self):
+        for el in self.connected:
+            el.toggleHighlight()
     
     def boundingRect(self):
         rects = array([list(el.boundingRect().getRect()) for el in self.connected])
@@ -496,9 +507,7 @@ class Transformer(Element):
             return min(distances)
         else:
             return min([el.distanceFrom(other) for el in self.connected])
-        
-                
-                
+            
     
 class Fault(object):
     """ Object represents a system fault from a power system perspective.

@@ -295,7 +295,7 @@ class Rectangle(QGraphicsItem,object):
 #         painter.setFont(QFont('serif', 12))
         
 #         print(self.x(), self.y())
-        QGraphicsSimpleTextItem(", ".join([el.shortRepr() for el in self.fault.elements]), parent=self).setPos(*self.pos.getRect()[0:2])
+#         QGraphicsSimpleTextItem(", ".join([el.shortRepr() for el in self.fault.elements]), parent=self).setPos(*self.pos.getRect()[0:2])
 #         if self.fault:
 #             painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
         

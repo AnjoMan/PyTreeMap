@@ -20,8 +20,8 @@ from PySide import QtGui, QtCore
 
 def main():
     ## sample files for Tree
-
-    file = 'cpfResults_4branch'
+    
+    file='cpfResults_case30_2level'
     # file = 'cpfResults_treemap'
     
     ## sample files for Treemap
