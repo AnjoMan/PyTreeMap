@@ -196,7 +196,6 @@ class Element(QGraphicsItem,object ):
             #self.connected will always be a list.
         else:
             self.connected = []
-            print(self)
         
         self.setAcceptHoverEvents(True)
         self.newPos = QPointF()
@@ -347,7 +346,6 @@ class Branch(Element):
         #assign self to buses
         if buses:
             for bus in buses: bus.connected.append(self)
-            print(self)
                 
         
     def boundingRect(self):
@@ -404,10 +402,7 @@ class Branch(Element):
         elif type(other) is Branch: #if the other is a line, 
             return DC.lineToLine(self.pos, other.pos)[0]
         else:
-            try:
-                return DC.pointToLine(self.pos, other.getPos())[0]
-            except:
-                print('wait');
+            return DC.pointToLine(self.pos, other.getPos())[0]
         
         
 class Bus(Element): 
