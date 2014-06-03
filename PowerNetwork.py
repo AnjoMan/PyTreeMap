@@ -81,7 +81,7 @@ class Vis(QMainWindow):
 #         layout.addLayout(self.widget)
         
         layout.setSpacing(0)
-        layout.addWidget(details,1,0,3,1)
+#         layout.addWidget(details,1,0,3,1)
         layout.addWidget(oneline,4,0,1,1)
         
         
@@ -418,13 +418,23 @@ class Bus(Element):
     
     def boundingRect(self):
         x,y = self.getPos()
-        return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
+#         return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
+        return QRectF(* [x-Bus.w, y-Bus.h, Bus.w*2, Bus.h*2])
     
     def distanceFrom(self, other):
         if type(other) is not type(self):
             return other.distanceFrom(self)
         else: 
             return DC.pointToPoint(self.getPos(), other.getPos())
+    
+    def paint(self, painter, option, widget):
+        #overwrite paint to draw numbers
+        super().paint(painter, option, widget)
+        
+        painter.setPen(Qt.black)
+        painter.setFont(QFont('serif', 5))
+        x,y = self.getPos();
+        painter.drawText(QPointF(x - Bus.w, y), str(self.id))
         
 
 class Gen(Element):

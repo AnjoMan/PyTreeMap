@@ -21,23 +21,10 @@ from PySide import QtGui, QtCore
 def main():
     ## sample files for Tree
     
-    file='cpfResults_case30_2level'
-    # file = 'cpfResults_treemap'
-    
-    ## sample files for Treemap
-    # file = 'cpfResults_mid'
-    # file ='cpfResults_med'
-    # file = 'cpfResults_case30_2level'
-    # file = 'cpfResults_case30_full_3_levels'
-    # file = 'cpfResults_case30_full_2'
-    
-    # file = 'cpfResults_case30_1level'
-    
-    
-    # file = 'cpfResults_case118'
-    # file = 'cpfResults_case118_full_1level'
-    # file = 'cpfResults_case118_1level'
-#     file = 'cpfResults_case118_2level'
+    file = 'cpfResults_case30_1level'
+#     file = 'cpfResults_case30_2level'
+
+    file = 'cpfResults_case118_1level'
     
     
     
@@ -59,12 +46,15 @@ def main():
     
     app = QtGui.QApplication(sys.argv)
     
+    mOneline = OneLineWidget(oneLineList, [0,0,900,700])
+    mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree)
+    mVis = Visualization( oneline = mOneline, treemap=mTreemap) 
     
-    mDetails = DetailsWidget([0,0,500,200])
+#     mDetails = DetailsWidget([0,0,500,200])
     
-    mOneline = OneLineWidget(oneLineList, [0,0,900,700], details = mDetails)
-    mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree, details = mDetails)
-    mVis = Visualization( oneline = mOneline, treemap=mTreemap, details = mDetails) 
+#     mOneline = OneLineWidget(oneLineList, [0,0,900,700], details = mDetails)
+#     mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree, details = mDetails)
+#     mVis = Visualization( oneline = mOneline, treemap=mTreemap, details = mDetails) 
     
     sys.exit(app.exec_())
     
