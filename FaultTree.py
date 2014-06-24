@@ -73,64 +73,68 @@ class TreeVis(QtGui.QWidget):
         y = round(0.15*height)
         ygap = (height - y*2) / (len(self.faultTree.keys()) - 1)
         
-        #build for equal spacing with fixed radii
-#         for levelNo,level in self.faultTree.items():
-#             sideGap, gap = hspacing(len(level), width)
-#             x = sideGap
-#             for fault in sorted(level, key= lambda mFault: mFault.value()) :
-#                 fault.setPos((x,y))
-#                 fault.setParent(self)
-#                 fault.setLevel(levelNo)
-#                 self.draw(fault)
-#                 x+= gap
-#             
-#             y+= ygap
-        
-        #build for equal spacing with radii scaled by levelContext 
-        
-        for levelNo, level in self.faultTree.items():
+#         build for equal spacing with fixed radii
+        for levelNo,level in self.faultTree.items():
+            
             self.levelLabels.append( (levelNo, 80, y))
-            if len(level) <2:  #case where only one fault is present
-                fault = level[0]
-                fault.radius = 15
-                fault.setPos((width/2,y))
+            sideGap, gap = hspacing(len(level), width)
+            x = sideGap
+#             for fault in sorted(level, key= lambda mFault: mFault.value) :
+            for fault in level:
+                fault.radius =  20
+                fault.setPos((x,y))
+                fault.setParent(self)
                 fault.setLevel(levelNo)
                 self.draw(fault)
-            elif len(level) == 2: #case where exactly two faults are present and we want to add spacing outside
-                level[0].radius, level[1].radius = (30,20) if level[0].getLevelContext() > level[1].getLevelContext() else (20,30)
-                level[0].setPos( (width * 0.30+ level[0].getRadius(), y))
-                level[1].setPos( (width - width*0.30 - level[1].getRadius(), y))
-                level[0].setLevel(levelNo)
-                level[1].setLevel(levelNo)
-                self.draw(level[0])
-                self.draw(level[1])
-            else:
-                x,_ = sideGap, _ = hspacing(len(level), width) # this is a little bogus since I only want 'sideGap'
-                space = width-2*sideGap
-                
-                sizes = [fault.getLevelContext()*0.6+0.4 for fault in level] #get all levels
-                
-                #first try to set sizes for XX% coverage
-                scale = (space *0.80)/sum(sizes)
-                gap = (space*0.20)/(len(sizes)) #change this divisor to change spacing
-                radii = [size*scale / 2.0 for size in sizes]
-                
-                mMax =  max(radii)
-                #if some are too big, scale them all down and increase the gap size
-                if mMax > 30:
-                    radii = [radius * 30 /mMax for radius in radii]
-                    gap = (space - sum(radii)*2) / (len(radii))#change this divisor to change spacing
-                
-                x+= gap/2
-#                 for radius, fault in zip(radii, sorted(level, key= lambda mFault: mFault.value())) :
-                for radius, fault in zip(radii, level):
-                    fault.radius = radius
-                    fault.setPos( (x+radius, y))
-                    fault.setParent(self)
-                    fault.setLevel(levelNo)
-                    self.draw(fault)
-                    x+= 2* radius + gap
+                x+= gap
+            
             y+= ygap
+        
+#         #build for equal spacing with radii scaled by levelContext 
+#         
+#         for levelNo, level in self.faultTree.items():
+#             self.levelLabels.append( (levelNo, 80, y))
+#             if len(level) <2:  #case where only one fault is present
+#                 fault = level[0]
+#                 fault.radius = 15
+#                 fault.setPos((width/2,y))
+#                 fault.setLevel(levelNo)
+#                 self.draw(fault)
+#             elif len(level) == 2: #case where exactly two faults are present and we want to add spacing outside
+#                 level[0].radius, level[1].radius = (30,20) if level[0].getLevelContext() > level[1].getLevelContext() else (20,30)
+#                 level[0].setPos( (width * 0.30+ level[0].getRadius(), y))
+#                 level[1].setPos( (width - width*0.30 - level[1].getRadius(), y))
+#                 level[0].setLevel(levelNo)
+#                 level[1].setLevel(levelNo)
+#                 self.draw(level[0])
+#                 self.draw(level[1])
+#             else:
+#                 x,_ = sideGap, _ = hspacing(len(level), width) # this is a little bogus since I only want 'sideGap'
+#                 space = width-2*sideGap
+#                 
+#                 sizes = [fault.getLevelContext()*0.6+0.4 for fault in level] #get all levels
+#                 
+#                 #first try to set sizes for XX% coverage
+#                 scale = (space *0.80)/sum(sizes)
+#                 gap = (space*0.20)/(len(sizes)) #change this divisor to change spacing
+#                 radii = [size*scale / 2.0 for size in sizes]
+#                 
+#                 mMax =  max(radii)
+#                 #if some are too big, scale them all down and increase the gap size
+#                 if mMax > 30:
+#                     radii = [radius * 30 /mMax for radius in radii]
+#                     gap = (space - sum(radii)*2) / (len(radii))#change this divisor to change spacing
+#                 
+#                 x+= gap/2
+# #                 for radius, fault in zip(radii, sorted(level, key= lambda mFault: mFault.value())) :
+#                 for radius, fault in zip(radii, level):
+#                     fault.radius = radius
+#                     fault.setPos( (x+radius, y))
+#                     fault.setParent(self)
+#                     fault.setLevel(levelNo)
+#                     self.draw(fault)
+#                     x+= 2* radius + gap
+#             y+= ygap
             
     
     
@@ -264,7 +268,7 @@ class TreeFault(Fault):
         startAngle, arcAngle = 0, 360 * 1/len(self.elements)
         
         #scale the font to the radius
-        mFont = QtGui.QFont('serif', round((r if len(self.elements)>1 else 2*r) *.6)) #QtGui.QFont('serif', 5)
+        mFont = QtGui.QFont('serif', round((r*0.9 if len(self.elements)>1 else 1.8*r) *.6)) #QtGui.QFont('serif', 5)
         
         painter.setPen(QtCore.Qt.black)
         painter.setFont(mFont)
@@ -282,8 +286,8 @@ class TreeFault(Fault):
         
         for other in self.connections:
             
-#             weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
-            weight=1
+            weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
+#             weight=1
             
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()

@@ -596,22 +596,26 @@ class Fault(object):
         try:
             min = self.globalContext['floor']
             max = self.globalContext['ceiling']
-            return (self.value() - min) / (max-min) if (max-min) > 0 else 0
         except: return 0
+        
+        return (self.value - min) / (max-min) if (max-min) > 0 else 0
     
     def getLevelContext(self):
         try:
             min = self.levelContext[len(self.elements)]['floor']
             max = self.levelContext[len(self.elements)]['ceiling']
-            return (self.value() - min) / (max-min) if (max-min) > 0 else 0
-        except: return 0
+        except:
+            return 0;
+        
+        return (self.value - min) / (max-min) if (max-min) > 0 else 0
     
     def getCumulativeContext(self):
         try:
             min = self.cumulativeContext[len(self.elements)]['floor']
             max = self.cumulativeContext[len(self.elements)]['ceiling']
-            return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
         except: return 0
+        
+        return (self.subTreeValue() - min) / (max-min) if (max-min) > 0 else 0
             
 #     def value(self):
 #         return self.reduction

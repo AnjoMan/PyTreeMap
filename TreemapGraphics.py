@@ -12,7 +12,7 @@ def main():
     from TreemapGraphics import TreemapFault
     
     
-    file = 'cpfResults_4branch'
+    file = 'cpfResults_4branches'
     
     
 #     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
@@ -23,7 +23,7 @@ def main():
     
     app = QApplication(sys.argv)
     
-    ex = TreemapGraphicsVis(pos = [100,100,900,900],faultTree = faultTree)
+    ex = TreemapGraphicsVis(pos = [100,100,700,700],faultTree = faultTree)
 #     ex2 = TreemapGraphicsVis( pos=[1100,50,400,400],values = values, name="Treemap of Random Values")
     
     sys.exit(app.exec_())
@@ -120,7 +120,12 @@ class TreemapGraphicsVis(QGraphicsView):
             painter.drawLine(xa,yb,xa,ya)
         
     def build(self,values):
-        """ build a treemap from a list of numbers """
+        """ build a treemap from a list of numbers 
+            
+            This funciton is for building a fault-tree without a tree-structure.
+            It takes 'values' as a list of numbers and builds a single-level
+            treemap out of that.
+        """
         pos = self.sceneRect().getRect()
         
         x0,y0,w,h = pos
@@ -133,7 +138,11 @@ class TreemapGraphicsVis(QGraphicsView):
             Rectangle(self,[xa,ya,xb-xa,yb-ya])
 
             
-    def build_fromFaultTree(self,faultTree,square,startLimit=1, depthLimit =2):
+    def build_fromFaultTree(self,
+                            faultTree,
+                            square,
+                            startLimit=1, 
+                            depthLimit =2):
         """ build a treemap from a list of faults. """
         
         square = [TreemapVis.border,TreemapVis.border,self.width()-TreemapVis.border*2, self.height()-TreemapVis.border*2]
@@ -289,15 +298,14 @@ class Rectangle(QGraphicsItem,object):
         painter.setBrush(brush)
         painter.drawRect(self.pos)
     
-#         
+    
+    
+    
 #         add annotations
-#         painter.setPen(Qt.black)
-#         painter.setFont(QFont('serif', 12))
         
-#         print(self.x(), self.y())
-#         QGraphicsSimpleTextItem(", ".join([el.shortRepr() for el in self.fault.elements]), parent=self).setPos(*self.pos.getRect()[0:2])
-#         if self.fault:
-#             painter.drawText( QPoint(8,painter.fontMetrics().height()*.75+2),", ".join([el.shortRepr() for el in self.fault.elements]))
+#         mText = QGraphicsSimpleTextItem(", ".join([el.shortRepr() for el in self.fault.elements]), parent=self)
+#         mText.setPos(*self.pos.getRect()[0:2])
+#         mText.setFont(QFont('sans-serif', 20))
         
     def setDetails(self):
         if self.scene().parent().details:
