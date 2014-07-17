@@ -46,7 +46,9 @@ class DetailsWidget(QWebView):
     def __init__(self, pos=None):
         super().__init__()
         
-        
+        if pos:
+            x,y,w,h = pos
+            self.resize(w,h);
 #         self.pos = pos or [400,300,500,200]
 #         x,y,w,h = self.pos
 

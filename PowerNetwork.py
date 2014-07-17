@@ -26,7 +26,7 @@ def main():
     from DetailsWidget import DetailsWidget
     
     
-    mCPFfile = CPFfile('cpfResults_case30_1level') #open a default cpf file
+    mCPFfile = CPFfile('cpfResults_case118_1level') #open a default cpf file
     mElements = mCPFfile.Branches + mCPFfile.Buses
     
     
@@ -225,7 +225,9 @@ class Element(QGraphicsItem,object ):
         if self.scene().parent().details:
             self.scene().parent().details.setContent(self.html())
     def __repr__(self): 
+#         string = "{:6s} {:04d}, ({:.0f},{:.0f})".format(self.__class__.__name__ ,self.id, *self.getPos())
         string = "{:6s} {:04d}".format(self.__class__.__name__ ,self.id)
+
         return string
     
     def shortRepr(self): 
@@ -347,7 +349,9 @@ class Branch(Element):
         if buses:
             for bus in buses: bus.connected.append(self)
                 
-        
+#     def __repr__(self): 
+#         string = "{:6s} {:04d}, ({:.0f},{:.0f}), ({:.0f},{:.0f})".format(self.__class__.__name__ ,self.id, *(self.getPos()[0]+self.getPos()[-1]))
+#         return string
     def boundingRect(self):
         x,y = array(self.pos).transpose()
         return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
@@ -426,6 +430,12 @@ class Bus(Element):
             return other.distanceFrom(self)
         else: 
             return DC.pointToPoint(self.getPos(), other.getPos())
+    
+    def toggleHighlight(self):
+        super().toggleHighlight()
+        
+        for branch in self.connected:
+            branch.toggleHighlight()
     
     def paint(self, painter, option, widget):
         #overwrite paint to draw numbers

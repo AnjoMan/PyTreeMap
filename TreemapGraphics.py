@@ -13,17 +13,23 @@ def main():
     
     
     file = 'cpfResults_4branches'
-    
+    file = 'cpfResults_case30_2level'
+#     file = 'cpfResults_case118_2level'
     
 #     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
     (faults, faultTree) = getFaults(TreemapFault, CPFfile(file))
     
     values = [14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]
     
+    values = [flt.subValue for flt in faultTree[1][1].connections]
     
     app = QApplication(sys.argv)
     
     ex = TreemapGraphicsVis(pos = [100,100,700,700],faultTree = faultTree)
+#     ex = TreemapGraphicsVis(pos = [100,100,100,100],faultTree = faultTree)
+#     ex = TreemapGraphicsVis(pos = [100,100,100,100],values = values)
+
+
 #     ex2 = TreemapGraphicsVis( pos=[1100,50,400,400],values = values, name="Treemap of Random Values")
     
     sys.exit(app.exec_())
@@ -73,10 +79,11 @@ class TreemapGraphicsVis(QGraphicsView):
         super().__init__()
         
 #         if not pos: pos = [50,50,900,900]
-        
+        self.pos = pos
         (x,y,w,h) = pos
-        self.resize(w,h)
-        self.move(x,y)
+        
+        self.setMinimumSize(w,h)
+        
         
         self.outlines = []
         self.widgets = []
@@ -101,6 +108,9 @@ class TreemapGraphicsVis(QGraphicsView):
         self.show()
 #         self.scale(.99
     
+    def sizeHint(self):
+        return self.pos[2:4]
+        
     def addWidget(self,widget):
         self.widgets.append(widget)
         self.scene.addItem(widget)
@@ -134,8 +144,9 @@ class TreemapGraphicsVis(QGraphicsView):
         rectangles, _ = layout(values, [x0+1,y0+1,x0+w-1,y0+h-1])
         
         for el in rectangles:
-            xa,ya,xb,yb = el
-            Rectangle(self,[xa,ya,xb-xa,yb-ya])
+            if el:
+                xa,ya,xb,yb = el
+                Rectangle(self,[xa,ya,xb-xa,yb-ya])
 
             
     def build_fromFaultTree(self,
@@ -212,6 +223,7 @@ class TreemapGraphicsVis(QGraphicsView):
                         fault.addRectangle(Rectangle(self,[xa+1,ya+1,xb-xa-2,yb-ya-2]))
         
         recursive_build(faultTree[startLimit], square, startLimit)
+            
 
 
 

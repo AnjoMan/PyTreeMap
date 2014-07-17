@@ -112,7 +112,17 @@ def layColumn(values, pos, quantize=True, minBoxArea = 2):
         boxLengths = np.array(a)/colWidth #recalculate box lengths based on the new column width
 #         boxLengths = boxLengths - layColumn.roundingError * colLength / len(boxLengths)
         boxLengths = np.round(boxLengths) #round to integer value
-        boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
+        
+        roundError = colLength - sum(boxLengths)
+        index = len(boxLengths)-1
+        increment = -1 if roundError < 0 else 1;
+        while roundError > 0:
+            boxLengths[index] = boxLengths[index]+increment
+            roundError = roundError - increment
+            index = index - 1
+            index = len(boxLengths)-1 if index < 0 else index
+            
+#         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
     
     #lay out box dimensions
     if dY <= dX:
@@ -177,8 +187,12 @@ def layout(values, pos, quantize=True, ):
     
     origIndexes_rect = []
         #track original indexes of values that have been laid out in the treemap
-    
+#     columnNo = 0;
     while len(values) > 0 and boxPos:
+#         columnNo = columnNo +1
+        
+#         if columnNo == 14:
+#             print('wait');
         boxPos, values, nextBox = layColumn(values, nextBox,quantize=quantize, minBoxArea = 4*4)
             #fit the next x values into a row/column
             
