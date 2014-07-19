@@ -68,7 +68,7 @@ def main():
     mDetails = DetailsWidget([0,0,200,200])
     
     mOneline = OneLineWidget(oneLineList, [0,0,900,700], details = mDetails)
-    mTreemap = TreemapGraphicsVis(pos = [0,0,600,600],faultTree=faultTree, details = mDetails)
+    mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree, details = mDetails)
     mVis = Visualization( oneline = mOneline, treemap=mTreemap, details = mDetails) 
     
     sys.exit(app.exec_())
@@ -115,6 +115,9 @@ class Visualization(QMainWindow):
             v.setStretchFactor(oneline, 4)
             v.setStretchFactor(details, 1)
             layout.addLayout(v)
+            
+            layout.setStretchFactor(oneline, 1)
+            layout.setStretchFactor(v, 2)
         elif oneline:
             layout.addWidget(self.oneline)
         

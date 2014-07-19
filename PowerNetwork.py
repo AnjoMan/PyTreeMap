@@ -21,23 +21,33 @@ import warnings
 
 def main():
     
-    from PowerNetwork import Bus, Branch
-    from VisBuilder import CPFfile
+#     from PowerNetwork import Bus, Branch
+#     from VisBuilder import CPFfile
     from DetailsWidget import DetailsWidget
+#     
+#     
+#     mCPFfile = CPFfile('cpfResults_case118_1level') #open a default cpf file
+#     mElements = mCPFfile.Branches + mCPFfile.Buses
+#     
+
+    from PowerNetwork import Bus, Branch
+    from VisBuilder import JSON_systemFile
     
+#     mSystem = JSON_systemFile('case30_geometry.json');
+    mSystem = JSON_systemFile('case30_geometry.json');
+
+    mElements = mSystem.Branches + mSystem.Buses
+#     elList = mSystem.getElementList()
     
-    mCPFfile = CPFfile('cpfResults_case118_1level') #open a default cpf file
-    mElements = mCPFfile.Branches + mCPFfile.Buses
-    
-    
+#     print('wait');
     
     
     app = QApplication(sys.argv)
-    
     mDetails = DetailsWidget()
     mOneline = OneLineWidget(mElements,shape = [0,0,900,700], details = mDetails)
     mVis = Vis(oneline =mOneline, details = mDetails)
     sys.exit(app.exec_())
+    
     
     
     
@@ -168,7 +178,14 @@ class OneLineWidget(QGraphicsView):
         
         self.show()
 
-        
+
+    
+    
+
+class InputError(Exception):
+    def __str__():
+        return "Require id & pos OR from_dict"
+    
     
 class Element(QGraphicsItem,object ):
     """ Object representing single grid elements, with child types such as 
@@ -186,16 +203,26 @@ class Element(QGraphicsItem,object ):
     hColor = {False: QColor("#b2b8c8"), True: QColor("#e45353")}
 #     hColor = {False: QColor("#b6cdc1"), True: QColor("#e45353")}
     
-    def __init__(self,id, pos, connected=None):
+    def __init__(self,id=None, pos=None, connected=None, from_dict=None):
         super(Element, self).__init__()
-        self.id=id
-        self.pos = pos
-        self.faults = []
+        
+        if id is None and pos is None and from_dict is None:
+            raise InputError()
+        
+        if from_dict:
+            self.fromDict(from_dict)
+        else:
+            self.id=id
+            self.pos = pos
+            
         
         if connected: self.connected = list(connected)
-            #self.connected will always be a list.
+        #self.connected will always be a list.
         else:
             self.connected = []
+        self.faults = []
+        
+        
         
         self.setAcceptHoverEvents(True)
         self.newPos = QPointF()
@@ -203,6 +230,16 @@ class Element(QGraphicsItem,object ):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setZValue(-1)
         self.highlight = False
+        
+    def fromDict(self, mDict):
+        self.pos = mDict['pos']
+        self.id = mDict['id']
+        
+    def toDict(self): #use this to serialize to a dict
+        mDict = { 'type': self.__class__.__name__,
+                  'id': self.id,
+                  'pos': self.pos}
+        return mDict
     
     def html_name(self):
         return "<p>{}</p>{}".format(self.__class__.__name__, self.id)
@@ -243,6 +280,8 @@ class Element(QGraphicsItem,object ):
     
     def __hash__(self): return hash(str(self))
     
+    
+        
     
     def getGeo(self): return Element.geo[self.__class__][self.id]
     def getPos(self): return self.pos
@@ -340,14 +379,23 @@ class Branch(Element):
     color = '#DB0058'
     radius = 1
     
-    def __init__(self,id, pos, buses=None):
+    def __init__(self,id=None, pos=None, buses=None, from_dict=None):
+        if id is None and pos is None and from_dict is None:
+            raise InputError()
         
-        super().__init__(id,pos, buses)
-#         self.connected = list(buses) #call list to ensure iterable
+        if from_dict:
+            pos = from_dict['pos']
+            id = from_dict['id']
+            buses = from_dict['buses']
+         
+        super().__init__(id, pos, buses)
         
+            
         #assign self to buses
         if buses:
             for bus in buses: bus.connected.append(self)
+        
+        
                 
 #     def __repr__(self): 
 #         string = "{:6s} {:04d}, ({:.0f},{:.0f}), ({:.0f},{:.0f})".format(self.__class__.__name__ ,self.id, *(self.getPos()[0]+self.getPos()[-1]))
@@ -360,6 +408,12 @@ class Branch(Element):
         points = self.pos
         self.pos = [self.scalePoint(point, newBox, oldBox) for point in points]
     
+    def toDict(self):
+        mDict = { 'type': self.__class__.__name__,
+                  'id': self.id,
+                  'pos': self.pos,
+                  'buses': [el.id for el in self.connected]}
+        return mDict
     
     def defineShape(self):
         path = QPainterPath()
@@ -420,6 +474,14 @@ class Bus(Element):
         path.addRect(QRectF(x-Bus.w/2, y-Bus.h/2, Bus.w, Bus.h))
         return path
     
+    
+    def toDict(self):
+        mDict = { 'type': self.__class__.__name__,
+                  'id': self.id,
+                  'pos': self.pos
+                  }
+        return mDict
+        
     def boundingRect(self):
         x,y = self.getPos()
 #         return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
@@ -449,8 +511,14 @@ class Bus(Element):
 
 class Gen(Element):
     color = '#FF9700'
-    def __init__(self, id, bus):
-        super().__init__(id, [None,None],[bus])
+    def __init__(self, id=None, bus=None, from_dict=None):
+        if id is None and bus is None and from_dict is None:
+            raise InputError()
+        
+        if from_dict:
+            self.__init__(from_dict['id'], from_dict['bus'])
+        else:
+            super().__init__(id, [None,None],[bus])
 #         self.bus = bus
 #         self.connected = [bus] 
 
@@ -458,7 +526,12 @@ class Gen(Element):
     def bus(self):
         return self.connected[0]
     
-    
+    def toDict(self):
+        mDict = { 'type': self.__class__.__name__,
+                  'id': self.id,
+                  'pos': self.getPos(),
+                  'bus': self.connected[0].id}
+        return mDict
     
     def getPos(self):
         return self.connected[0].getPos()
@@ -472,7 +545,14 @@ class Gen(Element):
 class Transformer(Element):
     color = '#80E800'
     
-    def __init__(self, id, elements):
+    def __init__(self, id=None, elements=None, from_dict=None):
+        if id is None and elements is None and from_dict is None:
+            raise InputError()
+        
+        if from_dict:
+            id = from_dict['id']
+            elements = from_dict['connected']
+        
         super().__init__(id,[], elements)
     
 #     def __init__(self, id, elements):
@@ -486,6 +566,19 @@ class Transformer(Element):
 #     @connected.setter
 #     def connected(self):
 #         pass
+
+    def toDict(self):
+        mDict = { 
+                    'type': self.__class__.__name__,
+                    'id': self.id,
+                    'pos': self.getPos(),
+                    'connected': {
+                                    'Bus':[el.id for el in self.connected if type(el) is Bus],
+                                    'Branch': [el.id for el in self.connected if type(el) is Branch]
+                                }
+                }
+        
+        return mDict
     
     def getPos(self):
         pos = []
@@ -539,11 +632,12 @@ class Fault(object):
     def __init__(self,listing, reduction = None):
         #listing is a dictionary containing: label, elements
         
-        self.value = reduction
         self._subValue = None
         
         self.label = listing['label'] if 'label' in listing else 'none'
         if 'label' in listing: del listing['label']
+        
+        self.value = listing['reduction'] if 'reduction' in listing else reduction
         
         self.elements = listing['elements']
         self.connections = []

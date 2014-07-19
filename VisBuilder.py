@@ -141,9 +141,109 @@ def getFaults(FaultType, cpfFile, filter=0):
 
 
 
-
-
-
+class JSON_systemFile(object):
+    def __init__(self, sys = None, res=None):
+        self.systemFile = sys
+        self.resultsFile = res
+    
+    @property
+    def Branches(self):
+        return list( self.getElements()[Branch].values() )
+    
+    @property
+    def Buses(self):
+        return  list( self.getElements()[Bus].values() )
+    
+    @property
+    def Transformers(self):
+        return  list( self.getElements()[Transformer].values() )
+    
+    @property
+    def Generators(self):
+        return  list( self.getElements()[Gen].values() )
+    
+    def getElementList(self):
+        elements = self.getElements()
+        
+        elList = []
+        for elTypeList in elements.values():
+            elList += list(elTypeList.values())
+        
+        return elList
+    
+    @doneLog('faults created')
+    def getFaults(self, FaultType, filter=0):
+        try:
+            return self.faults
+        except:
+            return self.getFaults_JSON(FaultType, self.resultsFile, filter)
+    
+    def getFaults_JSON(self, FaultType, file, filter):
+        import json
+        with open(file, 'r') as f:
+            results = json.load(f)
+        
+        baseLoad = results['baseLoad']
+        
+        elements = self.getElements()
+#         mapKeys = {'Transformer':Transformer ,  'Bus':Bus,'Branch':Branch,'Gen':Gen}
+        mapKeys = { Transformer:'Transformer',   Bus:'Bus',Branch:'Branch',Gen:'Gen'}
+        
+        
+        def faultListings(faultDicts): #break out faults in JSON to list of Elements and load reduction
+            for faultDict in faultDicts:
+                faultEls = []
+                for Type in mapKeys.keys():
+                    faultEls += [elements[Type][id] for id in faultDict['elements'][mapKeys[Type]]]
+                
+                yield {'reduction': baseLoad-faultDict['load'], 'elements':faultEls}
+        
+        faults = [FaultType(listing) for listing in faultListings(results['faults']) if listing['reduction']/baseLoad < filter/100]
+        
+        print('wait');
+        return faults
+    
+        
+    def getElements(self):
+        try:
+            return self.elements
+        except:
+            return self.getElements_JSON(self.systemFile)
+    
+ 
+    
+    def getElements_JSON(self,file):
+        #expect the elements to be in a json list of dicts, each dict should represent an element and should contain the info needed to produce that list.
+        import json
+        with open(file, 'r') as f:
+            elDicts = json.load(f)
+            
+        elements = dict()
+        
+        #build Buses
+        busDicts = [mDict for mDict in elDicts if mDict['type'] == 'Bus']
+        elements[Bus] = {el['id']: Bus(from_dict=el) for el in busDicts}
+        
+        #build Branches
+        branchDicts = [mDict for mDict in elDicts if mDict['type'] == 'Branch']
+        for mDict in branchDicts: #convert bus listings into actual Buses.
+            mDict['buses'] = [elements[Bus][i] for i in mDict['buses']]
+        elements[Branch] = {el['id']: Branch(from_dict=el) for el in branchDicts}
+        
+        #Build Generators
+        genDicts = [mDict for mDict in elDicts if mDict['type'] == 'Gen']
+        for mDict in genDicts:
+            mDict['bus'] = elements[Bus][mDict['bus']]
+        elements[Gen] = {el['id']: Gen(from_dict=el) for el in genDicts}
+        
+        
+        transDicts = [mDict for mDict in elDicts if mDict['type'] == 'Transformer']
+        for mDict in transDicts:
+            mDict['connected'] = [elements[Bus][i] for i in mDict['connected']['Bus']] + [elements[Branch][i] for i in mDict['connected']['Branch']]
+        elements[Transformer] = {el['id']: Transformer(from_dict=el) for el in transDicts}
+        
+        return elements
+    
 
 
 class CPFfile(object):
@@ -188,6 +288,8 @@ class CPFfile(object):
         
         
         return faults
+    
+
         
     def faultListings(self):
         """ Create a set of dumb-listings for faults in cpfResults.mat """
@@ -296,7 +398,7 @@ class CPFfile(object):
             branchPos = [element for element in base.branch_geo[0]] # branchPos = [negateY(element) for element in base.branch_geo[0]]
             
             
-            elements[Bus] = {id: Bus(id, pos) for id, pos in  zip(busIds, busPos)}
+            elements[Bus] = {id: Bus(id, list(pos)) for id, pos in  zip(busIds, busPos)}
             
             branch_buses = [ [elements[Bus][key] for key in el] for el in branchBusEnds]
             elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el]), buses) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
