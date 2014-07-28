@@ -198,7 +198,7 @@ class JSON_systemFile(object):
                 
                 yield {'reduction': baseLoad-faultDict['load'], 'elements':faultEls}
         
-        faults = [FaultType(listing) for listing in faultListings(results['faults']) if listing['reduction']/baseLoad < filter/100]
+        faults = [FaultType(listing) for listing in faultListings(results['faults'])  if listing['reduction']/baseLoad > filter/100]
         
         print('wait');
         return faults

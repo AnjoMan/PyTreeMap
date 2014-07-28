@@ -11,27 +11,27 @@ from VisBuilder import *
 def main():
     from TreemapGraphics import TreemapFault
     
-#     
-#     mSys = 'case30_geometry.json'
-#     mRes = 'cpfResults.json'
-#     
-#     mCPFresults = JSON_systemFile(mSys, mRes)
-#     
-#     (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
-#     
     
-#     file = 'cpfResults_4branches'
-#     file = 'cpfResults_case30_2level'
-    file = 'cpfResults'
-#     file = 'cpfResults_case118_2level'
+    mSys = 'case30_geometry.json'
+    mRes = 'cpfResults.json'
     
-#     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
-    (faults, faultTree) = getFaults(TreemapFault, CPFfile(file))
+    mCPFresults = JSON_systemFile(mSys, mRes)
     
-    values = [14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]
+    (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
     
-    values = [flt.subValue for flt in faultTree[1][1].connections]
-#     
+    
+# #     file = 'cpfResults_4branches'
+# #     file = 'cpfResults_case30_2level'
+# #     file = 'cpfResults'
+# #     file = 'cpfResults_case118_2level'
+# #     
+# #     (faults, faultTree) = getFaults(TreemapFault, CPFfile('cpfResults_case118_2level'))
+# #     (faults, faultTree) = getFaults(TreemapFault, CPFfile(file))
+# #     
+# #     values = [14, 1, 17, 14, 17, 18, 8, 8, 6, 10, 2, 1, 4, 9, 10, 0, 16, 13, 8, 12, 6, 17, 5, 1, 19, 4, 11, 16, 11, 5, 17, 16, 4, 7, 17, 14, 11, 16, 13, 19]
+# #     
+# #     values = [flt.subValue for flt in faultTree[1][1].connections]
+# #     
     app = QApplication(sys.argv)
     
     ex = TreemapGraphicsVis(pos = [100,100,700,700],faultTree = faultTree)
