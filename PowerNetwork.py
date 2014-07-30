@@ -362,6 +362,7 @@ class Element(QGraphicsItem,object ):
         
     
     def toggleHighlight(self):
+#         print('<toggle highlight: {:s}>'.format(str(self)))
         self.highlight = not self.highlight
         self.update(self.boundingRect())
     

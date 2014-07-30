@@ -1,0 +1,16 @@
+{
+	"baseLoad": 692.068117,
+	"input_file": "case30_mod.mat",
+	"faults": [
+		{ "load":399.435719, "elements": { "Bus":[], "Branch":[1], "Gen":[], "Transformer":[]}},
+		{ "load":616.387559, "elements": { "Bus":[], "Branch":[2], "Gen":[], "Transformer":[]}},
+		{ "load":593.860226, "elements": { "Bus":[], "Branch":[3], "Gen":[], "Transformer":[]}},
+		{ "load":622.385273, "elements": { "Bus":[], "Branch":[4], "Gen":[], "Transformer":[]}},
+		{ "load":615.767817, "elements": { "Bus":[], "Branch":[1, 2], "Gen":[], "Transformer":[]}},
+		{ "load":381.743049, "elements": { "Bus":[], "Branch":[1, 3], "Gen":[], "Transformer":[]}},
+		{ "load":617.006455, "elements": { "Bus":[], "Branch":[1, 4], "Gen":[], "Transformer":[]}},
+		{ "load":468.003889, "elements": { "Bus":[], "Branch":[2, 3], "Gen":[], "Transformer":[]}},
+		{ "load":614.754177, "elements": { "Bus":[], "Branch":[2, 4], "Gen":[], "Transformer":[]}},
+		{ "load":474.682742, "elements": { "Bus":[], "Branch":[3, 4], "Gen":[], "Transformer":[]}}
+	]
+}

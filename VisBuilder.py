@@ -1,4 +1,3 @@
-import scipy.io
 from numpy import *
 from collections import defaultdict
 
@@ -176,7 +175,8 @@ class JSON_systemFile(object):
         try:
             return self.faults
         except:
-            return self.getFaults_JSON(FaultType, self.resultsFile, filter)
+            self.faults = self.getFaults_JSON(FaultType, self.resultsFile, filter)
+            return self.faults
     
     def getFaults_JSON(self, FaultType, file, filter):
         import json
@@ -208,7 +208,8 @@ class JSON_systemFile(object):
         try:
             return self.elements
         except:
-            return self.getElements_JSON(self.systemFile)
+            self.elements = self.getElements_JSON(self.systemFile)
+            return self.elements
     
  
     
@@ -249,6 +250,8 @@ class JSON_systemFile(object):
 class CPFfile(object):
     
     def __init__(self, fileName='cpfResults_case30_2level'):
+        import scipy.io
+
         self.results = scipy.io.loadmat(fileName, struct_as_record=False)
     
     @property
