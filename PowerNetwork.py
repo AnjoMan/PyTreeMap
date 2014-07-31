@@ -641,7 +641,7 @@ class Fault(object):
         self.value = listing['reduction'] if 'reduction' in listing else reduction
         
         self.elements = listing['elements']
-        self.connections = []
+        self.connections = [] #for tracking sub-faults
         self.elements.sort(key=hash)
         for element in self.elements:
             element.addFault(self)

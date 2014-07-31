@@ -28,7 +28,7 @@ def main():
     
 #     file = 'cpfResults_case30_2level_branchbus'
 #     file = 'cpfResults_case30_1level'
-#     file = 'cpfResults_case30_2level'
+    file = 'cpfResults_case30_2level'
 #     file = 'cpfResults_4branches'
 
 #     file = 'cpfResults_case118_1level'
@@ -41,8 +41,8 @@ def main():
     depth = 2
     print("\n\n\n")
     
-#     mCase = ('case118_geometry.json', 'cpfResults_case118_2level.json')
-    mCase = ('case30_geometry.json', 'cpfResults_case30_2level.json')
+    mCase = ('case118_geometry.json', 'cpfResults_case118_2level.json')
+#     mCase = ('case30_geometry.json', 'cpfResults_case30_2level.json')
 #     mCase = ('case30_geometry.json', 'cpfResults_small.json')
     mCPFresults = JSON_systemFile(*mCase)
     

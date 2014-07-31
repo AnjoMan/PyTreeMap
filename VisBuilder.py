@@ -7,6 +7,31 @@ from FaultTree import *
 from TreemapDraw import *
 
 def main():
+    
+    from TreemapGraphics import TreemapFault
+    
+    file = 'cpfResults_4branches'
+    
+    
+    mCase = ('case30_geometry.json', 'cpfResults_small.json')
+    
+    
+    print('Creating JSON File')
+    mCPFresults_JSON = JSON_systemFile(*mCase)
+    
+    
+    print('\nCreating MATLAB File')
+    mCPFresults_MATLAB = CPFfile(file)
+    
+
+#     elements = mCPFresults.getElements()
+    
+    print('\nGetting Faults from JSON File')
+    (faults_JSON, faultTree_JSON) = getFaults(TreemapFault, mCPFresults_JSON)
+    print('\nGetting Faults from MATLAB File')
+    (faults_MATLAB, faultTree_MATLAB) = getFaults(TreemapFault, mCPFresults_MATLAB)
+    
+    
     print('runs')
     
     
@@ -136,14 +161,7 @@ def getFaults(FaultType, cpfFile, filter=0):
 
 
 
-
-
-
-
-class JSON_systemFile(object):
-    def __init__(self, sys = None, res=None):
-        self.systemFile = sys
-        self.resultsFile = res
+class ResultsFile(object):
     
     @property
     def Branches(self):
@@ -160,7 +178,15 @@ class JSON_systemFile(object):
     @property
     def Generators(self):
         return  list( self.getElements()[Gen].values() )
-    
+        
+    @property
+    def baseLoad(self):
+        try:
+            return self._baseLoad
+        except:
+            self._baseLoad = self.getBaseLoad()
+            return self._baseLoad
+            
     def getElementList(self):
         elements = self.getElements()
         
@@ -170,20 +196,45 @@ class JSON_systemFile(object):
         
         return elList
     
-    @doneLog('faults created')
     def getFaults(self, FaultType, filter=0):
         try:
             return self.faults
         except:
-            self.faults = self.getFaults_JSON(FaultType, self.resultsFile, filter)
+            self.faults = self.buildFaults(FaultType, filter)
             return self.faults
     
-    def getFaults_JSON(self, FaultType, file, filter):
+    def getElements(self):
+        try:
+            return self.elements
+        except:
+            self.elements = self.buildElements()
+            return self.elements
+    
+
+
+
+class JSON_systemFile(ResultsFile):
+    def __init__(self, sys = None, res=None):
+        self.systemFile = sys
+        self.resultsFile = res
+    
+    
+    def getBaseLoad(self):
+        """ How to get the base load from cpfResults.mat"""
         import json
         with open(file, 'r') as f:
             results = json.load(f)
         
-        baseLoad = results['baseLoad']
+        return results['baseLoad']
+        
+    @doneLog('Faults Created', len)
+    def buildFaults(self, FaultType, filter):
+        import json
+        with open(self.resultsFile, 'r') as f:
+            results = json.load(f)
+        
+        self._baseLoad = results['baseLoad']
+        baseLoad = self._baseLoad
         
         elements = self.getElements()
 #         mapKeys = {'Transformer':Transformer ,  'Bus':Bus,'Branch':Branch,'Gen':Gen}
@@ -200,23 +251,14 @@ class JSON_systemFile(object):
         
         faults = [FaultType(listing) for listing in faultListings(results['faults'])  if listing['reduction']/baseLoad > filter/100]
         
-        print('wait');
         return faults
     
-        
-    def getElements(self):
-        try:
-            return self.elements
-        except:
-            self.elements = self.getElements_JSON(self.systemFile)
-            return self.elements
-    
  
-    
-    def getElements_JSON(self,file):
+    @doneLog('Grid Elements Created')
+    def buildElements(self):
         #expect the elements to be in a json list of dicts, each dict should represent an element and should contain the info needed to produce that list.
         import json
-        with open(file, 'r') as f:
+        with open(self.systemFile, 'r') as f:
             elDicts = json.load(f)
             
         elements = dict()
@@ -247,30 +289,15 @@ class JSON_systemFile(object):
     
 
 
-class CPFfile(object):
+class CPFfile(ResultsFile):
     
     def __init__(self, fileName='cpfResults_case30_2level'):
         import scipy.io
 
         self.results = scipy.io.loadmat(fileName, struct_as_record=False)
     
-    @property
-    def Branches(self):
-        return list( self.getElements()[Branch].values() )
     
-    @property
-    def Buses(self):
-        return  list( self.getElements()[Bus].values() )
-    
-    @property
-    def Transformers(self):
-        return  list( self.getElements()[Transformer].values() )
-    
-    @property
-    def Generators(self):
-        return  list( self.getElements()[Gen].values() )
-    
-    def baseLoad(self): 
+    def getBaseLoad(self): 
         """ How to get the base load from cpfResults.mat"""
         return self.results['baseLoad'][0][0]
     
@@ -278,22 +305,21 @@ class CPFfile(object):
         """ How to get the results of CPF from cpfResults.mat"""
         return self.results['CPFloads'][0]
         
-    def reductions(self):
+    def getReductions(self):
         """ Get the reduction in loading from the base load and CPF results."""
         return self.baseLoad() - self.CPFloads()
     
     @doneLog('Faults Created', len)
-    def getFaults(self, FaultType, filter = 0):
+    def buildFaults(self, FaultType, filter = 0):
         """ build a list of faults from cpfFile """
-        baseLoad = self.baseLoad()
+        baseLoad = self.baseLoad
         
         faults = [ FaultType(listing, baseLoad-load) for listing, load in zip(self.faultListings(),self.CPFloads()) if (baseLoad-load)/baseLoad > filter/100]
-        
+
         
         return faults
     
-
-        
+    
     def faultListings(self):
         """ Create a set of dumb-listings for faults in cpfResults.mat """
         
@@ -321,99 +347,85 @@ class CPFfile(object):
         return self.results['base'][0,0]
     
     
-    def getElementList(self):
-        elements = self.getElements()
+    @doneLog('Grid Elements Created')
+    def buildElements(self):
+        base = self.baseSystem()
         
-        elList = []
-        for elTypeList in elements.values():
-            elList += list(elTypeList.values())
+        #get a list of buses attached to each branch
+        branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
+        nBranches = len(base.branch)
+        nBusses = len(base.bus)
+        nGens = len(base.gen)
         
-        return elList
+        #since numpy isn't that great at loading cell arrays, we need to use try/catch to ensure we don't try to read an empty trans array
+        nTrans = len(base.trans[0]) if len(base.trans) > 0 else 0
         
-    def getElements(self):
-        try:
-            return self.elements
-        except: #if return self.elements fails, we need to create self.elements
+        elements = defaultdict(list)
         
-            base = self.baseSystem()
+        def getBranchId(busEnds):
+            #find the branch index of a branch from the busses it connects to.
+            busEnds = set(busEnds)
+            mIndex = -1
+            for index, branch in enumerate(branchBusEnds):
+                mBranch = set(branch)
+                intersection = set.intersection(mBranch, busEnds)
+                if len( intersection) > 1: return index
+            return mIndex
+
+        def getGenId(bus):
+            #find the id of a generator given the bus it is in
+            try:
+                return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
+            except ValueError:
+                return -1
+        
+        def defaultIZE(dictionary,default_factory=list):
+            newDict = defaultdict(default_factory)
+            for k,v in dictionary.items():
+                newDict[k]=v
             
-            #get a list of buses attached to each branch
-            branchBusEnds = [ [int(el) for el in listing[0:2]] for listing in base.branch]
-            nBranches = len(base.branch)
-            nBusses = len(base.bus)
-            nGens = len(base.gen)
+            return newDict
             
-            #since numpy isn't that great at loading cell arrays, we need to use try/catch to ensure we don't try to read an empty trans array
-            nTrans = len(base.trans[0]) if len(base.trans) > 0 else 0
-            
-            elements = defaultdict(list)
-            
-            def getBranchId(busEnds):
-                #find the branch index of a branch from the busses it connects to.
-                busEnds = set(busEnds)
-                mIndex = -1
-                for index, branch in enumerate(branchBusEnds):
-                    mBranch = set(branch)
-                    intersection = set.intersection(mBranch, busEnds)
-                    if len( intersection) > 1: return index
-                return mIndex
-    
-            def getGenId(bus):
-                #find the id of a generator given the bus it is in
-                try:
-                    return 1 + [ int(el) for el in base.gen.transpose()[0]].index(bus)
-                except ValueError:
-                    return -1
-            
-            def defaultIZE(dictionary,default_factory=list):
-                newDict = defaultdict(default_factory)
-                for k,v in dictionary.items():
-                    newDict[k]=v
-                
-                return newDict
-                
-            def getTransEls(trans):
-                transEls = []
-                #get branches involved
-                transEls += [ elements[Branch][getBranchId(listing)] for listing in (trans[0][0] if len(trans[0]) > 0 else [])]
-                #get busses involved
-            #     import pdb; pdb.set_trace()
-                mBusses = defaultIZE(elements[Bus])
-                transEls += [mBusses[id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
-                #get gens involved
-                
-                
-                transEls += [ mBusses[getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
-                transEls = [el for el in transEls if el != []]
-                return transEls
-            
-            def negateY(element):
-                element = transpose(array(element))
-                element = transpose([list(element[0]), list(element[1]*-1)])
-                element = [list(point) for point in element]
-                return element
+        def getTransEls(trans):
+            transEls = []
+            #get branches involved
+            transEls += [ elements[Branch][getBranchId(listing)] for listing in (trans[0][0] if len(trans[0]) > 0 else [])]
+            #get busses involved
+        #     import pdb; pdb.set_trace()
+            mBusses = defaultIZE(elements[Bus])
+            transEls += [mBusses[id] for id in (trans[0][1][0] if len(trans[0][1]) > 0 else [])]
+            #get gens involved
             
             
-            # build elements
-            busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
-            genBusses = [int(el) for el in base.gen.transpose()[0]]
-            
-            branchPos = [element for element in base.branch_geo[0]] # branchPos = [negateY(element) for element in base.branch_geo[0]]
-            
-            
-            elements[Bus] = {id: Bus(id, list(pos)) for id, pos in  zip(busIds, busPos)}
-            
-            branch_buses = [ [elements[Bus][key] for key in el] for el in branchBusEnds]
-            elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el]), buses) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
-            elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
-    
-            if len(base.trans) > 0: elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
-            
-            self.elements = elements #save self.elements for later
-            
-            
-            log('Grid Elements Created')
-            return self.elements
+            transEls += [ mBusses[getGenId(bus)] for bus in ( trans[0][2][0] if len(trans[0][2]) > 0 else [])]
+            transEls = [el for el in transEls if el != []]
+            return transEls
+        
+        def negateY(element):
+            element = transpose(array(element))
+            element = transpose([list(element[0]), list(element[1]*-1)])
+            element = [list(point) for point in element]
+            return element
+        
+        
+        # build elements
+        busIds, busPos = [int(el) for el in base.bus.transpose()[0]], base.bus_geo
+        genBusses = [int(el) for el in base.gen.transpose()[0]]
+        
+        branchPos = [element for element in base.branch_geo[0]] # branchPos = [negateY(element) for element in base.branch_geo[0]]
+        
+        
+        elements[Bus] = {id: Bus(id, list(pos)) for id, pos in  zip(busIds, busPos)}
+        
+        branch_buses = [ [elements[Bus][key] for key in el] for el in branchBusEnds]
+        elements[Branch] ={int(id): Branch(id, list ([ list(point) for point in el]), buses) for id, el, buses in zip(range(1,nBranches+1), branchPos, branch_buses)}#create branches with busses in them, let the branches assign themselves to their busses
+        elements[Gen] = {int(id): Gen(id, elements[Bus][bus]) for id, bus in zip(range(1,nGens+1), genBusses)}
+
+        if len(base.trans) > 0: elements[Transformer] = { int(id): Transformer(id, getTransEls(trans)) for id, trans in zip( range(1,nTrans+1), base.trans[0])}
+        
+        self.elements = elements #save self.elements for later
+        
+        return self.elements
     
     def boundingRect(self, elList=None):
         
