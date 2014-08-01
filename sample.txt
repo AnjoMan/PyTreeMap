@@ -1,4 +1,0 @@
-{
-    "carol-lee": 2, 
-    "anton": 1
-}
