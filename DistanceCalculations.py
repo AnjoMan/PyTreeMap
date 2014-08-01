@@ -9,7 +9,12 @@ def pointToSegment(p1,p2,p3):
     num = dot(p3-p1,p2-p1)
     den = dot(p2-p1,p2-p1)
     
-    u = dot(p3-p1,p2-p1) / dot(p2-p1,p2-p1)
+    a = dot(p3-p1, p2-p1)
+    b = dot(p2-1, p2-p1)
+    
+    u = a/b if a != 0 else 0
+        
+#     u = dot(p3-p1,p2-p1) / dot(p2-p1,p2-p1)
     
     if u > 1:
         return (linalg.norm(p3 - p2),p2)

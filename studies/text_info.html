@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<head>
+	<style type='text/css'>
+		body {
+			padding: 10px;
+			margin:0px;
+		}
+		h {
+			font-family: sans-serif;
+			font-weight: bold;
+			font-size: 25px;
+			clear:right;
+			display: block;
+			padding: 0px;
+			margin-bottom: 5px;
+			border-bottom: black 2px solid;
+
+		}
+		ul {
+			font-family: sans-serif;
+			padding: 0px; margin: 0px;
+			list-style-type: none;
+		}
+		p {
+			padding: 0px;
+			margin: 0px;
+
+		}
+		ul li p{
+			display: inline-block;
+			width:100px;
+			margin-left: 5px;
+		}
+
+		.info {float:left; font-family: sans-serif; padding-left: 30px;} 
+		.info > p:first-child {font-weight: bold; margin-left: -15px; padding-top:10px;}
+		.el {display: inline-block;
+			clear: right;}
+		
+	</style>
+</head>
+
+
+
+
+<body>
+	<div class='el'>
+		<h>Fault 245</h>
+		<div class='info'>
+			<p>Elements:</p>
+			<ul>
+				<li><p>Bus</p>0014</li>
+				<li><p>Branch</p>0040</li>			
+				<li><p>Transformer</p>0040</li>
+			</ul>
+		</div>
+		<div class='info'>
+			<p>Load Reduction:</p>
+			<p>7.901 MW</p>
+		</div>
+	</div>
+
+
+
+	<div class='el'>
+		<h>Bus 145</h>
+		<div class='info'>
+			<p>Connections:</p>
+			<ul>
+				<li><p>Branch</p>0001</li>
+				<li><p>Branch</p>0002</li>
+				<li><p>Branch</p>0004</li>
+			</ul>
+
+		</div>
+
+		<div class='info'>
+			<p>Pct. Total Load Reduction</p>
+			<p> 12%</p>
+		</div>
+	</div>
+
+	<div class='el'><h>Bus    0001</h><div class='info'><p>Connection:</p><ul><li><p>Branch</p>1</li><li><p>Branch</p>2</li></ul></div><div class='info'><p>Loadability as Pct.:</p>4.800%</div></div>
+
+
+
+</body>
