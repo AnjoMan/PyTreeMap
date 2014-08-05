@@ -1,3 +1,13 @@
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
+
+
 import sys, os, inspect
 try:
     import pytreemap
@@ -18,7 +28,7 @@ import sys
 # from PowerNetwork import *
 import colorsys
 from numpy import *
-from Treemap import layout
+from pytreemap.Treemap import layout
 
 
 from pytreemap.visualize.VisBuilder import MATLAB_systemFile, JSON_systemFile, getFaults

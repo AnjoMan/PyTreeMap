@@ -31,26 +31,16 @@ from PySide.QtCore import *
 
 
 def main():
-    import pytreemap.visualize.Visualize2 as Visualize2
-    
-    print(Visualize2.__file__)
-    ## sample files for Tree
-#     file = 'cpfResults_case30_tree'
-#     file = 'cpfResults'
     
     
     ## sample files for Treemap
     
-#     file = 'cpfResults_case30_2level_branchbus'
-#     file = 'cpfResults_case30_1level'
-    file = os.path.join(os.getcwd(), 'sample_results','cpfResults_case30_2level')
-#     file = 'cpfResults_4branches'
-
-#     file = 'cpfResults_case118_1level'
-#     file = 'cpfResults_case118_2level'
-#     file = 'cpfResults_case118_fixedgeo'
-#     file = 'cpfResults'
     
+    
+    file = 'cpfResults_case30_2level.mat'
+#     file = 'cpfResults_case118_2level'
+    
+    file = os.path.join(pytreemap.__path__[0], 'sample_results', file) #get absolute file name
     
     
     depth = 2
@@ -66,7 +56,7 @@ def main():
     
     
     
-    mCPFresults = JSON_systemFile(*mCase)
+#     mCPFresults = JSON_systemFile(*mCase)
 #     mCPFresults = MATLAB_systemFile(file)
     
 
@@ -74,30 +64,16 @@ def main():
     # draw a responsive treemap diagram
     
     
-    elements = mCPFresults.getElements()
+#     elements = mCPFresults.getElements()
     
-    (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
+#     (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
     
-    oneLineList = mCPFresults.Branches + mCPFresults.Buses # order is important here.
+#     oneLineList = mCPFresults.Branches + mCPFresults.Buses # order is important here.
     
     
     app = QtGui.QApplication(sys.argv)
-#     
-    width, height=  1800,800
-#     mOneline = OneLineWidget(oneLineList, [0,0,1050,900])
-#     mTreemap = TreemapGraphicsVis(pos = [0,0,750,750],faultTree=faultTree)
-
-#     width, height=  900,600
-#     mOneline = OneLineWidget(oneLineList, [0,0,550,600])
-#     mTreemap = TreemapGraphicsVis(pos = [0,0,350,350],faultTree=faultTree)
-
-#     mVis = Visualization( oneline = mOneline, treemap=mTreemap, pos=(20,20,width,height)) 
     
-    mDetails = DetailsWidget([0,0,200,200])
-    
-    mOneline = OneLineWidget(oneLineList, [0,0,900,700], details = mDetails)
-    mTreemap = TreemapGraphicsVis(pos = [0,0,900,900],faultTree=faultTree, details = mDetails)
-    mVis = Visualization( oneline = mOneline, treemap=mTreemap, details = mDetails) 
+    mVis = ContingencyVisualization(*mCase)
     
     sys.exit(app.exec_())
     
@@ -118,11 +94,12 @@ def main():
 
 
 
+        
 
 class Visualization(QMainWindow):
     
     def __init__(self, treemap = None, oneline = None, details = None, pos = (20,20,1800,950)):
-        super(self.__class__, self).__init__()
+        super().__init__()
         
         self.oneline = oneline
         self.treemap = treemap
@@ -164,7 +141,23 @@ class Visualization(QMainWindow):
         self.show()
         log('visualization created')
 
-
+class ContingencyTreemap(Visualization):
+    def __init__(self, system_file, results_file):
+        mCPFresults = JSON_systemFile(system_file, results_file)
+        
+        (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
+        
+        mDetails = DetailsWidget([0,0,200,200])
+        mOneline = OneLineWidget( mCPFresults.Branches + mCPFresults.Buses,[0,0,900,700], details = mDetails)
+        mTreemap  = TreemapGraphicsVis(pos = [0,0,900,700],faultTree = faultTree, details = mDetails)
+        
+        
+        
+        
+        
+        super().__init__(treemap=mTreemap, oneline=mOneline, details=mDetails, pos = (20,20,1800,950))
+        
+        
 if __name__ == '__main__':
     main()
     
