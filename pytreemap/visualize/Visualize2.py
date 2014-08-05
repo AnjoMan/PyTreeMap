@@ -57,11 +57,17 @@ def main():
     print("\n\n\n")
     
 #     mCase = ('case118_geometry.json', 'cpfResults_case118_2level.json')
-    mCase =( os.path.join(pytreemap.system.__path__[0],'case30_geometry.json'), os.path.join(pytreemap.system.__path__[0], 'sample_results','cpfResults_case30_2level.json'))
+    mCase =( 'case30_geometry.json','cpfResults_case30_2level.json')
 #     mCase = ('case30_geometry.json', 'cpfResults_small.json')
-#     mCPFresults = JSON_systemFile(*mCase)
+
+
+    mCase =( os.path.join(pytreemap.system.__path__[0],mCase[0]), os.path.join(pytreemap.__path__[0], 'sample_results',mCase[1]))
     
-    mCPFresults = MATLAB_systemFile(file)
+    
+    
+    
+    mCPFresults = JSON_systemFile(*mCase)
+#     mCPFresults = MATLAB_systemFile(file)
     
 
      
