@@ -6,19 +6,18 @@
     sold or redistributed without expressed consent of the author.
 """
 
-
-
-import sys, os, inspect
-try:
-    import pytreemap
-except:
-    #walk up to 'pytreemap' and add to path.
-    realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
-    (realpath, filename) = os.path.split(realpath)
-    while filename != 'pytreemap':
+if __name__ == '__main__':
+    import sys, os, inspect
+    try:
+        import pytreemap
+    except:
+        #walk up to 'pytreemap' and add to path.
+        realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
         (realpath, filename) = os.path.split(realpath)
-    sys.path.append(realpath)
-    import pytreemap
+        while filename != 'pytreemap':
+            (realpath, filename) = os.path.split(realpath)
+        sys.path.append(realpath)
+        import pytreemap
     
     
 

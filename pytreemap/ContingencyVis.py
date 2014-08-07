@@ -1,3 +1,11 @@
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
 if __name__ == '__main__':
     import sys, os, inspect
     try:
@@ -73,7 +81,7 @@ def main():
     
     app = QtGui.QApplication(sys.argv)
     
-    mVis = ContingencyVisualization(*mCase)
+    mVis = ContingencyTreemap(*mCase)
     
     sys.exit(app.exec_())
     
@@ -148,8 +156,8 @@ class ContingencyTreemap(Visualization):
         (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
         
         mDetails = DetailsWidget([0,0,200,200])
-        mOneline = OneLineWidget( mCPFresults.Branches + mCPFresults.Buses,[0,0,900,700], details = mDetails)
-        mTreemap  = TreemapGraphicsVis(pos = [0,0,900,700],faultTree = faultTree, details = mDetails)
+        mOneline = OneLineWidget( mCPFresults.Branches + mCPFresults.Buses + mCPFresults.Generators,[0,0,900,900], details = mDetails)
+        mTreemap  = TreemapGraphicsVis(pos = [0,0,900,900],faultTree = faultTree, details = mDetails)
         
         
         

@@ -1,3 +1,11 @@
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
 import scipy.io
 import numpy as np
 # from mlabwrap import mlab

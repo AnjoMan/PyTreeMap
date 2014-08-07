@@ -1,11 +1,79 @@
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
 
 import numpy as np
 from collections import defaultdict
 import colorsys
 
 
-from PySide.QtGui import *
-from PySide.QtCore import *
+from PySide.QtGui import QWidget, QPainter, QApplication, QColor
+from PySide.QtCore import QRect
+
+
+def main():
+    import sys
+    
+    
+    width, height = 900, 900
+    x0, y0, xn, yn = pos = [10,10,800,800]
+
+    values = [61.604163314943435, 294.6813017301497, 93.649276939196398, 112.70697780452326, 88.953116126775967, 97.039574700870162, 137.10143908004227, 89.092705912171823, 97.275641027366532, 58.075842761050581, 333.70787878589113, 79.082361864220388, 65.173822806601834, 61.620466443905116, 79.0610858923568, 119.15194594331513, 157.76307523648643, 83.495491052375769, 146.8211675408229, 62.277396872459576, 59.428178065922452, 67.902811582920208, -9.3029028577009285, -8.7962074508714068, 14.208160768913103, 101.8804773503449, 73.045427399512732, 64.955629666655113, 83.746037258431556, 197.25455362773596, 67.215787200178852, 64.870088543368524, 61.454496111136791, 68.981997349090875, 65.545621430207575, 87.484672267841347, 98.503136492634326, 192.05389943959915, 60.262705723778026, 60.522842879217364, 64.049680842453768]
+    
+    values = np.array(values)
+    
+    rectangles, leftovers = layout(values, pos)
+    
+    
+    #build a visualization of the rectangles
+    app=QApplication(sys.argv)
+    canvas = TestCanvas([100,100,900,900])
+    for rect in rectangles:
+        print(rect)
+        canvas.addRect(rect)
+        
+    
+    
+    sys.exit(app.exec_())
+
+class TestCanvas(QWidget):
+    def __init__(self, pos):
+        
+        super().__init__()
+        self.rectangles = []
+        self.setGeometry(*pos)
+        
+        self.show()
+        
+    def addRect(self, rect):
+        self.rectangles.append(rect)
+        
+    
+    def paintEvent(self,e):
+        
+        painter = QPainter(self)
+        
+        for rect in self.rectangles:
+            try:
+                xa,ya,xb,yb = rect
+                
+                rect = xa,ya,xb-xa,yb-ya
+                painter.setBrush(randomColor())
+                painter.drawRect(QRect(*rect))
+            except:
+                print('rect was foul')
+
+
+
+
+
+
+
 
 
 def static_var(varname, value):
@@ -253,63 +321,11 @@ def randomColor(level=1):
 
 
 
-class TestCanvas(QWidget):
-    def __init__(self, pos):
-        
-        super().__init__()
-        self.rectangles = []
-        self.setGeometry(*pos)
-        
-        self.show()
-        
-    def addRect(self, rect):
-        self.rectangles.append(rect)
-        
-    
-    def paintEvent(self,e):
-        
-        painter = QPainter(self)
-        
-        for rect in self.rectangles:
-            try:
-                xa,ya,xb,yb = rect
-                
-                rect = xa,ya,xb-xa,yb-ya
-                painter.setBrush(randomColor())
-                painter.drawRect(QRect(*rect))
-            except:
-                print('rect was foul')
 
 
 
 
 
-def main():
-    import sys
-    app=QApplication(sys.argv)
-    width, height = 900, 900
-
-
-    canvas = TestCanvas([100,100,900,900])
-
-    x0, y0, xn, yn = pos = [10,10,800,800]
-
- 
-#     values = np.random.rand(20)
-    values = [61.604163314943435, 294.6813017301497, 93.649276939196398, 112.70697780452326, 88.953116126775967, 97.039574700870162, 137.10143908004227, 89.092705912171823, 97.275641027366532, 58.075842761050581, 333.70787878589113, 79.082361864220388, 65.173822806601834, 61.620466443905116, 79.0610858923568, 119.15194594331513, 157.76307523648643, 83.495491052375769, 146.8211675408229, 62.277396872459576, 59.428178065922452, 67.902811582920208, -9.3029028577009285, -8.7962074508714068, 14.208160768913103, 101.8804773503449, 73.045427399512732, 64.955629666655113, 83.746037258431556, 197.25455362773596, 67.215787200178852, 64.870088543368524, 61.454496111136791, 68.981997349090875, 65.545621430207575, 87.484672267841347, 98.503136492634326, 192.05389943959915, 60.262705723778026, 60.522842879217364, 64.049680842453768]
-    
-    values = np.array(values)
-    
-    rectangles = layout(values, pos)
-    
-    
-    for rect in rectangles:
-        print(rect)
-        canvas.addRect(rect)
-        
-    
-    
-    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":

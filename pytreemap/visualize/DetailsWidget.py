@@ -1,14 +1,23 @@
-import sys, os, inspect
-try:
-    import pytreemap
-except:
-    #walk up to 'pytreemap' and add to path.
-    realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
-    (realpath, filename) = os.path.split(realpath)
-    while filename != 'pytreemap':
-        (realpath, filename) = os.path.split(realpath)
-    sys.path.append(realpath)
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
     
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
+if __name__ == '__main__':
+    import sys, os, inspect
+    try:
+        import pytreemap
+    except:
+        #walk up to 'pytreemap' and add to path.
+        realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+        (realpath, filename) = os.path.split(realpath)
+        while filename != 'pytreemap':
+            (realpath, filename) = os.path.split(realpath)
+        sys.path.append(realpath)
+        import pytreemap
 
 from pytreemap.system.PowerNetwork import Fault, Branch, Bus, Transformer, Gen
 

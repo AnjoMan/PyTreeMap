@@ -1,25 +1,53 @@
-import sys, os, inspect
-try:
-    import pytreemap
-except:
-    #walk up to 'pytreemap' and add to path.
-    realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
-    (realpath, filename) = os.path.split(realpath)
-    while filename != 'pytreemap':
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
+if __name__ == '__main__':
+    import sys, os, inspect
+    try:
+        import pytreemap
+    except:
+        #walk up to 'pytreemap' and add to path.
+        realpath = os.path.realpath(os.path.dirname(inspect.getfile(inspect.currentframe())))
         (realpath, filename) = os.path.split(realpath)
-    sys.path.append(realpath)
-    import pytreemap
+        while filename != 'pytreemap':
+            (realpath, filename) = os.path.split(realpath)
+        sys.path.append(realpath)
+        import pytreemap
     
 import numpy as np
 import colorsys
 from collections import defaultdict
-from pytreemap.system.PowerNetwork import Fault
+from pytreemap.visualize.VisBuilder import getFaults, JSON_systemFile
+from pytreemap.system.PowerNetwork import Fault, Branch, Bus, Gen, Transformer
 from pytreemap.Treemap import layout
-from PySide import QtGui, QtCore
+from PySide.QtGui import *
+from PySide.QtCore import *
 # from FaultTreemap import *
 # from sets import Set
 import sys
 
+
+
+def main():
+    
+    mCase =( 'case30_geometry.json','cpfResults_tree.json')
+    mCase =( os.path.join(pytreemap.system.__path__[0],mCase[0]), os.path.join(pytreemap.__path__[0], 'sample_results',mCase[1]))
+    
+    
+    
+    
+    
+    app = QApplication(sys.argv)
+    
+    mVis = ContingencyTree(*mCase)
+    
+    sys.exit(app.exec_())
+    
 
 class Legend(object):
     
@@ -35,18 +63,20 @@ class Legend(object):
         
         
         for text, color in self.items:
-            painter.setBrush(QtGui.QColor(color))
-            painter.setPen(QtCore.Qt.NoPen)
+            painter.setBrush(QColor(color))
+            painter.setPen(Qt.NoPen)
             painter.drawRect(x,y,width,height)
             
-            painter.setFont(QtGui.QFont('serif', 10))
-            painter.setPen(QtCore.Qt.black)
+            painter.setFont(QFont('serif', 10))
+            painter.setPen(Qt.black)
             metrics = painter.fontMetrics()
             fw,fh = metrics.width(text),metrics.ascent()
             painter.drawText(x+ (width - fw)/2.0, y +(height+ fh)/2.0,text)
             y = y+height+2
             
-class TreeVis(QtGui.QWidget):
+
+        
+class TreeVis(QWidget):
     def __init__(self, pos=None, faultTree=None):
         
         super(TreeVis, self).__init__()
@@ -66,6 +96,13 @@ class TreeVis(QtGui.QWidget):
         
         self.draw(Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]]))
         
+class ContingencyTree(TreeVis):
+    
+    def __init__(self, system_file, resultsFile, pos=[20,20,1600,700]):
+        
+        (faults, faultTree) = getFaults(TreeFault, JSON_systemFile(system_file, resultsFile))
+        
+        super().__init__(pos, faultTree)
         
         
         
@@ -161,7 +198,7 @@ class TreeVis(QtGui.QWidget):
     def qtColor(colorString):
         r,g,b = [colorString[1:3],colorString[3:5], colorString[5:7]]
         r,g,b = [int(num,16) for num in [r,g,b]]
-        return QtGui.QColor(r,g,b)
+        return QColor(r,g,b)
         
     def drawOutline(self, pos, border, color=None):
         if border > 0:
@@ -183,10 +220,10 @@ class TreeVis(QtGui.QWidget):
         
         
         
-        qp = QtGui.QPainter()
+        qp = QPainter()
         qp.begin(self)
         
-#         qp.setRenderHint(QtGui.QPainter.Antialiasing)
+#         qp.setRenderHint(QPainter.Antialiasing)
         #draw rectangles
         
         for rectangle, color in zip(self.rectangles, self.colors):
@@ -196,7 +233,7 @@ class TreeVis(QtGui.QWidget):
             qp.drawRect(x0,y0, xn-x0, yn-y0)
         
         #draw borders /outlines
-        pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
+        pen = QPen(QColor(10,10,10), 1, Qt.SolidLine)
        
         for (x0,y0,xn,yn), border, color in self.outlines:
 #             print color.red(), color.green(), color.blue()
@@ -209,12 +246,12 @@ class TreeVis(QtGui.QWidget):
                 qp.drawLine(x0,y0,xn,yn)
         
         #draw lines
-        qp.setRenderHint(QtGui.QPainter.Antialiasing,True)
+        qp.setRenderHint(QPainter.Antialiasing,True)
         pen.setWidth(1)
         qp.setPen(pen)
         for x0,y0,xn,yn in self.lines:
             qp.drawLine(x0,y0,xn,yn)
-        qp.setRenderHint(QtGui.QPainter.Antialiasing, False)
+        qp.setRenderHint(QPainter.Antialiasing, False)
         #draw objects
         for obj in self.objs:
             obj.draw(self, qp)
@@ -222,9 +259,9 @@ class TreeVis(QtGui.QWidget):
         
         #draw level labels:
         
-        qp.setPen(QtCore.Qt.black)
-        qp.setBrush(QtCore.Qt.NoBrush)
-        mFont = QtGui.QFont()
+        qp.setPen(Qt.black)
+        qp.setBrush(Qt.NoBrush)
+        mFont = QFont()
         mFont.setPointSize(25)
         qp.setFont(mFont)
         for level,x, y in self.levelLabels:
@@ -279,21 +316,21 @@ class TreeFault(Fault):
         startAngle, arcAngle = 0, 360 * 1/len(self.elements)
         
         #scale the font to the radius
-        mFont = QtGui.QFont('serif', round((r*0.9 if len(self.elements)>1 else 1.8*r) *.6)) #QtGui.QFont('serif', 5)
+        mFont = QFont('serif', round((r*0.9 if len(self.elements)>1 else 1.8*r) *.6)) #QFont('serif', 5)
         
-        painter.setPen(QtCore.Qt.black)
+        painter.setPen(Qt.black)
         painter.setFont(mFont)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
         
         def putText(qp,x,y,text):
-            qp.setPen(QtGui.QColor(0,0,0))
+            qp.setPen(QColor(0,0,0))
             metrics = qp.fontMetrics()
             fw,fh = metrics.width(text),metrics.height()
             qp.drawText(QPointF(x-fw/2,y+fh/4),text)
         
         
         
-        pen = QtGui.QPen(QtGui.QColor(10,10,10), 1, QtCore.Qt.SolidLine)
+        pen = QPen(QColor(10,10,10), 1, Qt.SolidLine)
         
         for other in self.connections:
             
@@ -302,13 +339,13 @@ class TreeFault(Fault):
             
             xT,yT = self.bottomConnectorPos()
             xB,yB = other.topConnectorPos()
-            painter.setPen(QtGui.QPen(QtCore.Qt.black, weight))
+            painter.setPen(QPen(Qt.black, weight))
             painter.drawLine(QPointF(xT,yT),QPointF(xB,yB))
         
         
         for index,element in enumerate(self.elements):
-            painter.setBrush(QtGui.QColor(element.__class__.color))
-            painter.setPen(QtGui.QColor(80,80,80))
+            painter.setBrush(QColor(element.__class__.color))
+            painter.setPen(QColor(80,80,80))
             if len(self.elements) > 1:
                 painter.drawPie(QRectF(x-r,y-r,2*r,2*r), round(startAngle*16), round(arcAngle*16))
             else:
@@ -323,5 +360,7 @@ class TreeFault(Fault):
             startAngle += arcAngle
         
 #         print '\n'
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.Antialiasing, False)
 
+if __name__ == "__main__":
+    main()

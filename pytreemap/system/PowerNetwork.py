@@ -1,3 +1,11 @@
+"""
+    written by Anton Lodder 2012-2014
+    all rights reserved.
+    
+    This software is the property of the author and may not be copied,
+    sold or redistributed without expressed consent of the author.
+"""
+
 import sys, os, inspect
 try:
     import pytreemap
@@ -50,11 +58,12 @@ def main():
     
     
     file = 'case30_geometry.json'
+#     file = 'case118_geometry.json'
     file = os.path.join(pytreemap.system.__path__[0], file)
     
     mSystem = JSON_systemFile(file);
 
-    mElements = mSystem.Branches + mSystem.Buses
+    mElements = mSystem.Transformers + mSystem.Branches + mSystem.Buses + mSystem.Generators
 #     elList = mSystem.getElementList()
     
 #     print('wait');
@@ -216,7 +225,6 @@ class Element(QGraphicsItem,object ):
     
     weight = 10
     geo = defaultdict(None)
-    hColor= {False: Qt.darkGray, True: Qt.darkRed}
     
     hColor = {False: QColor("#b2b8c8"), True: QColor("#e45353")}
 #     hColor = {False: QColor("#b6cdc1"), True: QColor("#e45353")}
@@ -351,13 +359,17 @@ class Element(QGraphicsItem,object ):
         path = QPainterPath()
         
         pos = self.getPos()
+        
         radius = self.__class__.weight
-        path.moveTo(QPointF(*pos))
+        try:
+            path.moveTo(QPointF(*pos))
+        except:
+            print('wait')
         path.addEllipse( QRectF(pos[0]-radius, pos[1]-radius, 2*radius, 2*radius))
         return path
         
     def paint(self, painter, option, widget):
-        mColor = Element.hColor[self.highlight] # or self.isUnderMouse()]
+        mColor = self.__class__.hColor[self.highlight] # or self.isUnderMouse()]
         painter.setPen(mColor)
         painter.setBrush(mColor)
         painter.drawPath(self.shape())
@@ -395,6 +407,7 @@ class Element(QGraphicsItem,object ):
         return sqrt(self.getPos()**2 + other.getPos()**2)
 
 class Branch(Element):
+    
     color = '#DB0058'
     radius = 1
     
@@ -504,7 +517,7 @@ class Bus(Element):
     def boundingRect(self):
         x,y = self.getPos()
 #         return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
-        return QRectF(* [x-Bus.w, y-Bus.h, Bus.w*2, Bus.h*2])
+        return QRectF(* [x-Bus.w*1.1, y-Bus.h*1.1, Bus.w*2.2, Bus.h*2.2])
     
     def distanceFrom(self, other):
         if type(other) is not type(self):
@@ -530,6 +543,10 @@ class Bus(Element):
 
 class Gen(Element):
     color = '#FF9700'
+    
+    
+#     hColor = {False: QColor("#b2b8c8"), True: QColor("#e45353")}
+    hColor = {False: QColor("#509CF2"), True: QColor("#e45353")}
     def __init__(self, id=None, bus=None, from_dict=None):
         if id is None and bus is None and from_dict is None:
             raise InputError()
@@ -556,10 +573,40 @@ class Gen(Element):
         return self.connected[0].getPos()
     
     def boundingRect(self):
-        return self.connected[0].boundingRect()
+        return self.shape().boundingRect()
         
     def distanceFrom(self, other):
         return other.distanceFrom(self.connected[0])
+        
+    def defineShape(self):
+        x,y = self.getPos()
+        path = QPainterPath()
+        
+        mFont = QFont('Helvetica', 8, QFont.Light)
+        path.addText(QPointF(x+2,y-Bus.h-2), mFont, "G")
+        
+        mFont = QFont('arial', 5, QFont.Light)
+        path.addText(QPointF(x+10, y-Bus.h), mFont, str(self.id))
+        
+        return path
+#         
+#     def paint(self, painter, option, widget):
+#         
+#         painter.setBrush(Qt.blue)
+#         painter.setPen(Qt.blue)
+#         painter.drawRect(self.boundingRect())
+#         
+#         
+#         super().paint(painter, option, widget)
+#         x,y = self.bus.getPos()
+#         
+#         
+#         mFont = QFont('courier', 15, QFont.Bold)
+# #         print(QFontInfo(mFont).family())
+#         painter.setBrush(Qt.red)
+#         painter.setPen(Qt.red)
+# #         painter.drawText(x+2,y-5, 'G')
+        
 
 class Transformer(Element):
     color = '#80E800'
@@ -634,6 +681,14 @@ class Transformer(Element):
             return min(distances)
         else:
             return min([el.distanceFrom(other) for el in self.connected])
+    
+    def paint(self, painter, option, widget):
+        
+        painter.setPen(Qt.red)
+        painter.setBrush(Qt.red)
+        
+        x,y,w,h = self.boundingRect().getRect()
+        painter.drawText(x+15,y+15,'Trans')
             
     
 class Fault(object):
