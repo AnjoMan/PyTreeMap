@@ -18,13 +18,12 @@
 
 	 Then, in a command prompt type
 
-	 >>> python run_pytreemap.py [system geometry file] [results file]
+	 >>> python run_pytreemap.py  [results file] [system geometry file]
 
 
 	 e.g.
 
-
-	 >>> python run_pytreemap.py case30_geometry.json cpfResults_case30_2level.json
+	 >>> python run_pytreemap.py  cpfResults_case30_2level.json case30_geometry.json
 
 
 
@@ -38,9 +37,9 @@ from PySide.QtGui import QApplication
 
 
 
-#get input arguments
-system_file, results_file = sys.argv[1], sys.argv[2]
-
+#get files
+results_file = sys.argv[1]
+system_file = sys.argv[2] if len(sys.argv) > 2 else None
 
 
 
@@ -49,7 +48,8 @@ app = QApplication(sys.argv)
 
 
 #build visualization
-myVis = ContingencyTreemap(system_file, results_file)
+
+myVis = ContingencyTreemap(results_file, system_file)
 
 #run
 sys.exit(app.exec_())

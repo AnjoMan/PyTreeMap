@@ -235,9 +235,21 @@ class ResultsFile(object):
 
 
 class JSON_systemFile(ResultsFile):
-    def __init__(self, sys = None, res=None):
-        self.systemFile = sys
+    def __init__(self, res = None, sys=None):
         self.resultsFile = res
+        
+        if sys is None:
+            #assume that system file is given in the results file.
+            import json
+            with open(res, 'r') as f:
+                results = json.load(f)
+            
+            self.systemFile = results['geometry_file']
+        else:
+            self.systemFile = sys
+            
+        
+        
     
     
     def getBaseLoad(self):

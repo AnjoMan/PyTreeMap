@@ -98,9 +98,9 @@ class TreeVis(QWidget):
         
 class ContingencyTree(TreeVis):
     
-    def __init__(self, system_file, resultsFile, pos=[20,20,1600,700]):
+    def __init__(self, results_file, system_file,  pos=[20,20,1600,700]):
         
-        (faults, faultTree) = getFaults(TreeFault, JSON_systemFile(system_file, resultsFile))
+        (faults, faultTree) = getFaults(TreeFault, JSON_systemFile(results_file, system_file))
         
         super().__init__(pos, faultTree)
         

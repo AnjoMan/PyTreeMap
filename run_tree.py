@@ -18,7 +18,7 @@
 
 	 Then, in a command prompt type
 
-	 >>> python run_tree.py [system geometry file] [results file]
+	 >>> python run_tree.py  [results file] [system geometry file]
 
 
 
@@ -29,12 +29,14 @@
 
 
 """
-
+import sys
 from pytreemap.visualize.FaultTree import ContingencyTree
 from PySide.QtGui import QApplication
 
+
 #get files
-system_file, results_file = sys.argv[1], sys.argv[2]
+results_file = sys.argv[1]
+system_file = sys.argv[2] if len(sys.argv) > 2 else None
 
 
 #start QApplication service
@@ -42,7 +44,7 @@ app = QApplication(sys.argv)
 
 
 #build visualizaiton
-myVis = ContingencyTree(system_file, results_file)
+myVis = ContingencyTree(results_file, system_file)
 
 #run
 sys.exit(app.exec_())

@@ -55,11 +55,11 @@ def main():
     print("\n\n\n")
     
 #     mCase = ('case118_geometry.json', 'cpfResults_case118_2level.json')
-    mCase =( 'case30_geometry.json','cpfResults_case30_2level.json')
+    mCase =('cpfResults_case30_2level.json', 'case30_geometry.json')
 #     mCase = ('case30_geometry.json', 'cpfResults_small.json')
 
 
-    mCase =( os.path.join(pytreemap.system.__path__[0],mCase[0]), os.path.join(pytreemap.__path__[0], 'sample_results',mCase[1]))
+    mCase =( os.path.join(pytreemap.__path__[0], 'sample_results',mCase[0]),  os.path.join(pytreemap.system.__path__[0],mCase[1]),)
     
     
     
@@ -79,7 +79,7 @@ def main():
 #     oneLineList = mCPFresults.Branches + mCPFresults.Buses # order is important here.
     
     
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     
     mVis = ContingencyTreemap(*mCase)
     
@@ -139,7 +139,7 @@ class Visualization(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.widget = QtGui.QWidget()
+        self.widget = QWidget()
         self.setCentralWidget(self.widget)
         self.widget.setLayout(layout)
         
@@ -150,8 +150,8 @@ class Visualization(QMainWindow):
         log('visualization created')
 
 class ContingencyTreemap(Visualization):
-    def __init__(self, system_file, results_file):
-        mCPFresults = JSON_systemFile(system_file, results_file)
+    def __init__(self, results_file, system_file = None):
+        mCPFresults = JSON_systemFile(results_file, system_file)
         
         (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
         
