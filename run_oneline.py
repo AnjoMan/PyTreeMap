@@ -8,7 +8,16 @@
 
 
 """
-	 HOWTO:
+	This script will build a oneline diagram of a given system file. For
+	information on how to build a valid system file see HOWTO.txt
+
+
+
+
+
+	--------------------
+	How to run this file
+	--------------------
 
 
 	 to run this file, make sure that you have a 
@@ -17,9 +26,11 @@
 	 the pytreemap library are in your PATH.
 
 	 Then, in a command prompt type
+	 >>> python run_oneline.py
 
+
+	 To specify a system file to be drawn, use
 	 >>> python run_oneline.py  [system_file] 
-
 
 	 e.g.
 
@@ -38,7 +49,7 @@ from PySide.QtGui import QApplication
 
 
 #get system system_file
-file = sys.argv[1] 
+system_file= sys.argv[1] if len(sys.argv)>1 else 'case30_geometry.json'
 
 
 

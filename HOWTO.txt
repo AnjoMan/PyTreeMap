@@ -4,20 +4,28 @@ How to use pytreemap:
 
 *Setup*
 
-1. You will need to have Python 3.3 or greater installed on your system, along with the Numpy and Scipy packages. The easiest way to achieve this is to download Pyzo, which is a scientific python distribution based on Python 3.4.
+1. You will need to have Python 3.3 or greater installed on your system, along with the PySide, Numpy and Scipy packages. The easiest way to achieve this is to download Pyzo, which is a scientific python distribution based on Python 3.4. You can download Pyzo at the following address: http://www.pyzo.org/downloads.html
 
-2. You will need to ensure that you add the pyzo installation directory to your PATH variable so that you can run python from the command line.
+2. You will need to ensure that you add the pyzo installation directory (or the base directory of your python distribution), to your PATH variable so that you can run `python`* from the command line. 
+
+		* the actual command may be different depending on your python distribution; e.g. on Ubuntu the command for Python 3.3 is `python3`, and you should use this command wherever you see `python` below.
 
 3. You will need to make sure that pytreemap is in the python path. You can do this by moving the directory 'pytreemap' to  <pyzo installation directory>/Lib/site-packages.
 
 4. Finally, you can try pytreemap by opening up a terminal, navigating to this directory and running the following command:
-		>>> python run_pytreemap.py cpfResults_case30_2level.json
+		>>> python run_pytreemap.py
+
+	You can try a treemap diagram by running
+		>>> python run_treemap.py
 
 	You can try a tree diagram by running
-		>>> python run_pytreemap.py cpfResults_tree.json
+		>>> python run_tree.py
 
 	You can try a system diagram by running
-		>>> python oneline.py case30_geometry.json
+		>>> python oneline.py
+
+For instructions on how to use these files to look at other data, see the comments in each file.
+
 
 
 
@@ -28,7 +36,8 @@ How to use pytreemap:
 
 If you want to input your own system and your own contingency measurements, you can do that by formatting your data into json files.
 
-1. If you want to use a system other than the IEEE 30-bus or IEEE 118-bus systems supplied, you need to create a file representing that data in the same format as the files given ('case30_geometry.json') The format for this file is a json list of elements with property-> value attributes. The different elements should have the following information:
+1. 
+	If you want to use a system other than the IEEE 30-bus or IEEE 118-bus systems supplied, you need to create a file representing that data in the same format as the files given (e.g.'case30_geometry.json') The format for this file is a json list of elements with property-> value attributes. The different elements should have the following information:
 
 	a) Branch
 		type: 'Branch'
@@ -59,9 +68,10 @@ If you want to input your own system and your own contingency measurements, you 
 	The representation of transformers used in this software is an equivalent combination of buses and branches. It is entirely optional to include any transformers in the geometry file
 
 
-2. If you want to use your own results, you need to format them in immitation of the results files supplied, eg. 'cpfResults_small.json'. You can use any index to evaluate your contingencies as long as it produces a single numeric value per contingency scenario. 
+2. 
+	If you want to use your own results, you need to format them in immitation of the results files supplied, eg. 'cpfResults_small.json'. You can use any index to evaluate your contingencies as long as it produces a single numeric value per contingency scenario. 
 
-	This software interprets the value of the base load to be the maximum value the index could have and that 'load' in each contingency scenario would be less than 'baseLoad' but greater than 0. and calculates 'baseLoad - load' for every contingency. For this reason you should ensure that the values for 'baseLoad' and for 'load' of each element are positive 
+	This software interprets the value of the base load to be the maximum value the index could have and that 'load' in each contingency scenario would be less than 'baseLoad' but greater than 0. and calculates 'baseLoad - load' for every contingency. For this reason you should ensure that the values for 'baseLoad' and for 'load' of each element are positive and that 'baseLoad' is the highest value.
 
 	The results should be reported as a json structure:
 
@@ -86,4 +96,6 @@ If you want to input your own system and your own contingency measurements, you 
 		}
 
 	}
+
+	For more details, see the attached data files.
 

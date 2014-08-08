@@ -44,13 +44,19 @@ def main():
 #     mCase = ('case118_geometry.json', 'cpfResults_case118_2level.json')
     mCase = ('case30_geometry.json', 'cpfResults_case30_2level.json')
 #     mCase = ('case30_geometry.json', 'cpfResults_small.json')
+
+    mFile = 'cpfResults_case30_2level.json'
+    mFile = os.path.join(pytreemap.__path__[0], 'sample_results', mFile)
     
     
 #     mSys = 'case118_geometry.json'
 #     mRes = 'cpfResults_case118_2level.json'
     
-    mCase = getFullFileNames(*mCase)
-    mCPFresults = JSON_systemFile(*mCase)
+#     mCase = getFullFileNames(*mCase)
+#     mCPFresults = JSON_systemFile(*mCase)
+
+
+    mCPFresults = JSON_systemFile(mFile)
     
     (faults, faultTree) = getFaults(TreemapFault, mCPFresults)
     
@@ -119,7 +125,7 @@ def randomColor(level=1, secondary = None):
 class TreemapGraphicsVis(QGraphicsView):
     border = 10;
     
-    def __init__(self, pos=None, faultTree=None, values=None, name="TreemapGraphics", details= None):
+    def __init__(self, pos=[10,10,900,900], faultTree=None, values=None, name="TreemapGraphics", details= None):
         super().__init__()
         
 #         if not pos: pos = [50,50,900,900]

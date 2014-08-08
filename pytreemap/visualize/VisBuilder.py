@@ -34,7 +34,7 @@ def main():
     file = os.path.join(pytreemap.__path__[0], 'sample_results', file)
     
     
-    mCase = (os.path.join(pytreemap.__path__[0], 'system','case30_geometry.json'), os.path.join(pytreemap.__path__[0], 'sample_results', 'cpfResults_small.json'))
+    mCase = (os.path.join(pytreemap.__path__[0], 'sample_results', 'cpfResults_small.json'), os.path.join(pytreemap.__path__[0], 'system','case30_geometry.json'))
     
     
     print('Creating JSON File')
@@ -152,16 +152,19 @@ def getFaults(FaultType, cpfFile, filter=0):
             #identify indices of  None
             nonIndexes = [i for i, el in enumerate(x) if el is None]
             
-            #reeplace None with 0 so we can do math on it
-            x = [el if el else 0 for el in x]
+            if len(nonIndexes) < len(x):
+                #replace None with 0 so we can do math on it
+                x = [el if el else 0 for el in x]
+                
+                
+                #perform mask
+                x = array(x)
+                x = x - min(x)
+                x = x / max(x)
             
-            #perform mask
-            x = array(x)
-            x = x - min(x)
-            x = x / max(x)
-            
-            #put Nones back where indicated by nonIndexes
-            x = [el if i not in nonIndexes else None for i,el in enumerate(x) ]
+                #put Nones back where indicated by nonIndexes
+                x = [el if i not in nonIndexes else None for i,el in enumerate(x) ]
+                
             return x
             
         #initialize and get secondary values for all faults.
@@ -239,12 +242,18 @@ class JSON_systemFile(ResultsFile):
         self.resultsFile = res
         
         if sys is None:
-            #assume that system file is given in the results file.
-            import json
-            with open(res, 'r') as f:
-                results = json.load(f)
-            
-            self.systemFile = results['geometry_file']
+            try:
+                #assume that system file is given in the results file.
+                import json
+                with open(res, 'r') as f:
+                    results = json.load(f)
+                
+                self.systemFile = results['geometry_file']
+                import os
+                assert os.path.isfile(self.systemFile)
+            except:
+                log("No System File Given")
+                self.systemFile = None
         else:
             self.systemFile = sys
             
@@ -289,36 +298,60 @@ class JSON_systemFile(ResultsFile):
  
     @doneLog('Grid Elements Created')
     def buildElements(self):
-        #expect the elements to be in a json list of dicts, each dict should represent an element and should contain the info needed to produce that list.
-        import json
-        with open(self.systemFile, 'r') as f:
-            elDicts = json.load(f)
+        
+        if self.systemFile == None:
+            #what to do if no system file is given - identify the elements from the results file and create objects with no positional data
+            import json
+            with open(self.resultsFile, 'r') as f:
+                results = json.load(f)
             
-        elements = dict()
-        
-        #build Buses
-        busDicts = [mDict for mDict in elDicts if mDict['type'] == 'Bus']
-        elements[Bus] = {el['id']: Bus(from_dict=el) for el in busDicts}
-        
-        #build Branches
-        branchDicts = [mDict for mDict in elDicts if mDict['type'] == 'Branch']
-        for mDict in branchDicts: #convert bus listings into actual Buses.
-            mDict['buses'] = [elements[Bus][i] for i in mDict['buses']]
-        elements[Branch] = {el['id']: Branch(from_dict=el) for el in branchDicts}
-        
-        #Build Generators
-        genDicts = [mDict for mDict in elDicts if mDict['type'] == 'Gen']
-        for mDict in genDicts:
-            mDict['bus'] = elements[Bus][mDict['bus']]
-        elements[Gen] = {el['id']: Gen(from_dict=el) for el in genDicts}
-        
-        
-        transDicts = [mDict for mDict in elDicts if mDict['type'] == 'Transformer']
-        for mDict in transDicts:
-            mDict['connected'] = [elements[Bus][i] for i in mDict['connected']['Bus']] + [elements[Branch][i] for i in mDict['connected']['Branch']]
-        elements[Transformer] = {el['id']: Transformer(from_dict=el) for el in transDicts}
-        
-        return elements
+            from collections import defaultdict
+            elDict = defaultdict(dict)
+            for fault in results['faults']:
+                for element, ids in fault['elements'].items():
+                    for id in ids:
+                        elDict[element][id] = True;
+            
+            
+            
+            mapKeys = { 'Transformer':Transformer, 'Bus':Bus, 'Branch':Branch, 'Gen':Gen}
+            elements = defaultdict(dict)
+            for elementType, ids in elDict.items():
+                elements[mapKeys[elementType]] = {id: mapKeys[elementType](id) for id in ids}
+            
+            return elements
+                
+        else:
+            #expect the elements to be in a json list of dicts, each dict should represent an element and should contain the info needed to produce that list.
+            import json
+            with open(self.systemFile, 'r') as f:
+                elDicts = json.load(f)
+                
+            elements = dict()
+            
+            #build Buses
+            busDicts = [mDict for mDict in elDicts if mDict['type'] == 'Bus']
+            elements[Bus] = {el['id']: Bus(from_dict=el) for el in busDicts}
+            
+            #build Branches
+            branchDicts = [mDict for mDict in elDicts if mDict['type'] == 'Branch']
+            for mDict in branchDicts: #convert bus listings into actual Buses.
+                mDict['buses'] = [elements[Bus][i] for i in mDict['buses']]
+            elements[Branch] = {el['id']: Branch(from_dict=el) for el in branchDicts}
+            
+            #Build Generators
+            genDicts = [mDict for mDict in elDicts if mDict['type'] == 'Gen']
+            for mDict in genDicts:
+                mDict['bus'] = elements[Bus][mDict['bus']]
+            elements[Gen] = {el['id']: Gen(from_dict=el) for el in genDicts}
+            
+            
+            transDicts = [mDict for mDict in elDicts if mDict['type'] == 'Transformer']
+            for mDict in transDicts:
+                mDict['connected'] = [elements[Bus][i] for i in mDict['connected']['Bus']] + [elements[Branch][i] for i in mDict['connected']['Branch']]
+            elements[Transformer] = {el['id']: Transformer(from_dict=el) for el in transDicts}
+            
+            return elements
     
 
 

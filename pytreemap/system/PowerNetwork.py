@@ -21,7 +21,6 @@ except:
 
     
 from numpy import *
-from matplotlib import pyplot as plt
 from collections import defaultdict
 import weakref
 
@@ -285,7 +284,9 @@ class Element(QGraphicsItem,object ):
 
     
     def html(self):
-        return "<div class='el'><h>{}</h>{}{}</div>".format( str(self), self.html_connected(), self.html_percentage())
+#         return "<div class='el'><h>{}</h>{}{}</div>".format( str(self), self.html_connected(), self.html_percentage())
+        return "<div class='el'><h>{}</h>{}</div>".format( str(self), self.html_connected())
+
         
     def setDetails(self):
         if self.scene().parent().details:
@@ -324,7 +325,11 @@ class Element(QGraphicsItem,object ):
     def boundingRect(self):
 #          return QRectF(* list(array(self.getPos())-Element.weight) + [2*Element.weight]*2)
         pos = self.getPos()
-        return QRectF([pos[0],pos[1],0,0])
+        
+        if pos:
+            return QRectF([pos[0],pos[1],0,0])
+        else:
+            return QRect([0,0,0,0])
     
     
     def fitIn(self, newBox, oldBox):
@@ -436,9 +441,11 @@ class Branch(Element):
 #         string = "{:6s} {:04d}, ({:.0f},{:.0f}), ({:.0f},{:.0f})".format(self.__class__.__name__ ,self.id, *(self.getPos()[0]+self.getPos()[-1]))
 #         return string
     def boundingRect(self):
-        x,y = array(self.pos).transpose()
-        
-        return QRectF(min(x)-Branch.radius, min(y)-Branch.radius, max(x)-min(x)+2*Branch.radius, max(y)-min(y)+2*Branch.radius)
+        if self.pos:
+            x,y = array(self.pos).transpose()
+            return QRectF(min(x)-Branch.radius, min(y)-Branch.radius, max(x)-min(x)+2*Branch.radius, max(y)-min(y)+2*Branch.radius)
+        else:
+            return QRect(0,0,0,0)
     
     def fitIn(self, newBox, oldBox):
         points = self.pos
@@ -491,12 +498,18 @@ class Branch(Element):
         return path.simplified()
     
     def distanceFrom(self,other):
-        if type(other) is Transformer: #if transformer, return the smallest distance from all elements in the transformer.
-            return other.distanceFrom(self)
-        elif type(other) is Branch: #if the other is a line, 
-            return DC.lineToLine(self.pos, other.pos)[0]
+        if self.pos:
+            try:
+                if type(other) is Transformer: #if transformer, return the smallest distance from all elements in the transformer.
+                    return other.distanceFrom(self)
+                elif type(other) is Branch: #if the other is a line, 
+                    return DC.lineToLine(self.pos, other.pos)[0]
+                else:
+                    return DC.pointToLine(self.pos, other.getPos())[0]
+            except NoneType:
+                return None
         else:
-            return DC.pointToLine(self.pos, other.getPos())[0]
+            return None
         
         
 class Bus(Element): 
@@ -519,15 +532,21 @@ class Bus(Element):
         return mDict
         
     def boundingRect(self):
-        x,y = self.getPos()
-#         return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
-        return QRectF(* [x-Bus.w*1.1, y-Bus.h*1.1, Bus.w*2.2, Bus.h*2.2])
+        if self.pos:
+            x,y = self.getPos()
+    #         return QRectF(*[x-Bus.w/2, y-Bus.h/2, Bus.w,Bus.h])
+            return QRectF(* [x-Bus.w*1.1, y-Bus.h*1.1, Bus.w*2.2, Bus.h*2.2])
+        else:
+            return QRect(0,0,0,0)
     
     def distanceFrom(self, other):
-        if type(other) is not type(self):
-            return other.distanceFrom(self)
-        else: 
-            return DC.pointToPoint(self.getPos(), other.getPos())
+        try:
+            if type(other) is not type(self):
+                return other.distanceFrom(self)
+            else:
+                return DC.pointToPoint(self.getPos(), other.getPos())
+        except (TypeError, AttributeError):
+            return None
     
     def toggleHighlight(self):
         super().toggleHighlight()
@@ -559,7 +578,8 @@ class Gen(Element):
             self.__init__(from_dict['id'], from_dict['bus'])
         else:
             super().__init__(id, [None,None],[bus])
-            bus.connected.append(self)
+            if bus:
+                bus.connected.append(self)
 
     @property
     def bus(self):
@@ -576,10 +596,16 @@ class Gen(Element):
         return self.connected[0].getPos()
     
     def boundingRect(self):
-        return self.shape().boundingRect()
+        if self.connected[0] and self.connected[0].pos:
+            return self.shape().boundingRect()
+        else:
+            return QRect(0,0,0,0)
         
     def distanceFrom(self, other):
-        return other.distanceFrom(self.connected[0])
+        try:
+            return other.distanceFrom(self.connected[0])
+        except AttributeError:
+            return None
         
     def defineShape(self):
         x,y = self.getPos()
@@ -666,32 +692,42 @@ class Transformer(Element):
             el.toggleHighlight()
     
     def boundingRect(self):
-        rects = array([list(el.boundingRect().getRect()) for el in self.connected if type(el) is Bus])
-        points = [rects[:,0].transpose(), rects[:,1].transpose(), rects[:,0]+rects[:,2], rects[:,1] + rects[:,3]]
         
-        x0,y0,xn,yn = min(points[0]), min(points[1]), max(points[2]), max(points[3])
-        return QRectF( x0,y0, xn-x0, yn-y0)
+        rects = [list(el.boundingRect().getRect()) for el in self.connected if type(el) is Bus]
+        rects = [el for el in rects if el != None]
+        if rects:
+            rects = array(rects)
+            points = [rects[:,0].transpose(), rects[:,1].transpose(), rects[:,0]+rects[:,2], rects[:,1] + rects[:,3]]
+            
+            x0,y0,xn,yn = min(points[0]), min(points[1]), max(points[2]), max(points[3])
+            return QRectF( x0,y0, xn-x0, yn-y0)
+        else:
+            return QRect(0,0,0,0)
     
     def fitIn(self, *args):
         pass
     
     def distanceFrom(self,other):
+        
         if type(other) == type(self):
             distances = []
             for EL in self.connected:
                 for el in other.connected:
                     distances.append(EL.distanceFrom(el))
-            return min(distances)
+        
+            return min(distances) if distances else None
+            
         else:
-            return min([el.distanceFrom(other) for el in self.connected])
-    
+            distances = [el.distanceFrom(other) for el in self.connected]
+            return min(distances) if distances else None
+        
     def paint(self, painter, option, widget):
-        
-        painter.setPen(Qt.red)
-        painter.setBrush(Qt.red)
-        
-        x,y,w,h = self.boundingRect().getRect()
-        painter.drawText(x+15,y+15,'Trans')
+        pass
+#         painter.setPen(Qt.red)
+#         painter.setBrush(Qt.red)
+#         
+#         x,y,w,h = self.boundingRect().getRect()
+#         painter.drawText(x+15,y+15,'Trans')
             
     
 class Fault(object):
@@ -805,14 +841,19 @@ class Fault(object):
     def secondary(self):
         try:
             return self._secondary
-        except:
-            
+        except AttributeError:
             if len(self.elements) == 1:
                 self._secondary = None
             else:
                 import itertools
                 distances = [ elA.distanceFrom(elB) for elA, elB in itertools.combinations(self.elements,2)]
-                self._secondary = mean(distances)
+                distances = [ el for el in distances if el != None] #filter out None
+                
+                    
+                if distances:
+                    self._secondary = mean(distances)
+                else:
+                    self._secondary = None 
             
             return self._secondary
 
