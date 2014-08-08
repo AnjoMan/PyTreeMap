@@ -18,12 +18,12 @@
 
 	 Then, in a command prompt type
 
-	 >>> python run_pytreemap.py  [results file] [system geometry file]
+	 >>> python run_pytreemap.py  [results file] 
 
 
 	 e.g.
 
-	 >>> python run_pytreemap.py  cpfResults_case30_2level.json case30_geometry.json
+	 >>> python run_pytreemap.py  cpfResults_case30_2level.json
 
 
 

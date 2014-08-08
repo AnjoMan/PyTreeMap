@@ -1,6 +1,7 @@
 {
 	"baseLoad": 692.068117,
 	"input_file": "case30_mod.mat",
+	"geometry_file": "case30_geometry.json",
 	"faults": [
 		{ "load":399.435719, "elements": { "Bus":[], "Branch":[1], "Gen":[], "Transformer":[]}},
 		{ "load":616.387559, "elements": { "Bus":[], "Branch":[2], "Gen":[], "Transformer":[]}},

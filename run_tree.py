@@ -18,13 +18,13 @@
 
 	 Then, in a command prompt type
 
-	 >>> python run_tree.py  [results file] [system geometry file]
+	 >>> python run_tree.py  [results file]
 
 
 
 	 e.g.
 
-	 >>> python run_pytreemap.py case30_geometry.json cpfResults_tree.json
+	 >>> python run_pytreemap.py  cpfResults_tree.json
 
 
 

@@ -1,0 +1,89 @@
+How to use pytreemap:
+
+
+
+*Setup*
+
+1. You will need to have Python 3.3 or greater installed on your system, along with the Numpy and Scipy packages. The easiest way to achieve this is to download Pyzo, which is a scientific python distribution based on Python 3.4.
+
+2. You will need to ensure that you add the pyzo installation directory to your PATH variable so that you can run python from the command line.
+
+3. You will need to make sure that pytreemap is in the python path. You can do this by moving the directory 'pytreemap' to  <pyzo installation directory>/Lib/site-packages.
+
+4. Finally, you can try pytreemap by opening up a terminal, navigating to this directory and running the following command:
+		>>> python run_pytreemap.py cpfResults_case30_2level.json
+
+	You can try a tree diagram by running
+		>>> python run_pytreemap.py cpfResults_tree.json
+
+	You can try a system diagram by running
+		>>> python oneline.py case30_geometry.json
+
+
+
+
+
+
+*Using your own data*
+
+If you want to input your own system and your own contingency measurements, you can do that by formatting your data into json files.
+
+1. If you want to use a system other than the IEEE 30-bus or IEEE 118-bus systems supplied, you need to create a file representing that data in the same format as the files given ('case30_geometry.json') The format for this file is a json list of elements with property-> value attributes. The different elements should have the following information:
+
+	a) Branch
+		type: 'Branch'
+		id:		<numeric id of the element>
+		buses:	<list of integers corresponding to ids of buses at each end of the branch>
+		pos:	<list of x-y points describing the multisegment path of the branch>
+
+	b) Bus
+		type: 'Bus'
+		id:		<numeric id of the element>
+		pos:	<x,y> point describing the location of the bus
+
+	c) Generator		
+		type: 'Gen'
+		id:		<numeric id of the element>
+		pos:	[]
+		bus:	<id of bus it is connected to>
+
+	d) Transformer
+		type: 'Transformer'
+		id:		<numeric id of the element>
+		pos:	[]
+		connected: {
+			'Bus': 		<list of ids of buses on the transformer>
+			'Branch':	<list of ids of Branches represented in the transformer>
+		}
+
+	The representation of transformers used in this software is an equivalent combination of buses and branches. It is entirely optional to include any transformers in the geometry file
+
+
+2. If you want to use your own results, you need to format them in immitation of the results files supplied, eg. 'cpfResults_small.json'. You can use any index to evaluate your contingencies as long as it produces a single numeric value per contingency scenario. 
+
+	This software interprets the value of the base load to be the maximum value the index could have and that 'load' in each contingency scenario would be less than 'baseLoad' but greater than 0. and calculates 'baseLoad - load' for every contingency. For this reason you should ensure that the values for 'baseLoad' and for 'load' of each element are positive 
+
+	The results should be reported as a json structure:
+
+	{
+		"baseLoad": <value of index for the unfaulted base case>
+		"geometry_file": <name of geometry file described above. the geometry file must be in the same directory>
+		"faults": [
+					<list of contingency scenarios as described below>
+		]
+	}
+
+
+	The listing for each fault should be in the following format:
+
+	{
+		"load": <value of the index for the faulted case>
+		"elements"{
+			"Bus": <list of id numbers of buses involved in the contingency>
+			"Branch": <list of id numbers of branches involved in the contingency>
+			"Gen": <list of id numbers of generators involved in the contingency>
+			"Transformer": <list of id numbers of transformers involved in the contingency>
+		}
+
+	}
+

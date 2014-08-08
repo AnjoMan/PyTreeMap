@@ -61,7 +61,7 @@ def main():
 #     file = 'case118_geometry.json'
     file = os.path.join(pytreemap.system.__path__[0], file)
     
-    mSystem = JSON_systemFile(file);
+    mSystem = JSON_systemFile(sys=file);
 
     mElements = mSystem.Transformers + mSystem.Branches + mSystem.Buses + mSystem.Generators
 #     elList = mSystem.getElementList()
@@ -146,6 +146,7 @@ class OneLineWidget(QGraphicsView):
     def __init__(self, elList, shape=None,details = None):
         QGraphicsView.__init__(self)
         
+        shape = shape if shape != None else [10,10,900,900]
         if shape:
             x,y,w,h =  shape
             self.move(x,y)
@@ -269,9 +270,11 @@ class Element(QGraphicsItem,object ):
     
     def html_name(self):
         return "<p>{}</p>{}".format(self.__class__.__name__, self.id)
-        
+    
+    def html_connected_li(self):
+        return [ "<li>{}</li>".format(el.html_name()) for el in self.connected]
     def html_connected(self):
-        elList = "<ul>{}</ul>".format( "".join([ "<li>{}</li>".format(el.html_name()) for el in self.connected]))
+        elList = "<ul>{}</ul>".format( "".join(self.html_connected_li()))
         return "<div class='info'><p>Connections:</p>{}</div>".format(elList)
         
         
@@ -434,7 +437,8 @@ class Branch(Element):
 #         return string
     def boundingRect(self):
         x,y = array(self.pos).transpose()
-        return QRectF(min(x), min(y), max(x)-min(x), max(y)-min(y))
+        
+        return QRectF(min(x)-Branch.radius, min(y)-Branch.radius, max(x)-min(x)+2*Branch.radius, max(y)-min(y)+2*Branch.radius)
     
     def fitIn(self, newBox, oldBox):
         points = self.pos
@@ -555,8 +559,7 @@ class Gen(Element):
             self.__init__(from_dict['id'], from_dict['bus'])
         else:
             super().__init__(id, [None,None],[bus])
-#         self.bus = bus
-#         self.connected = [bus] 
+            bus.connected.append(self)
 
     @property
     def bus(self):
@@ -655,15 +658,15 @@ class Transformer(Element):
                 pos.append(el.getPos())
                 
 # #         pos = [el.getPos() for el in self.elements]
-        return pos
-#         return mean(pos,0)
+#         return pos
+        return mean(pos,0)
     
     def toggleHighlight(self):
         for el in self.connected:
             el.toggleHighlight()
     
     def boundingRect(self):
-        rects = array([list(el.boundingRect().getRect()) for el in self.connected])
+        rects = array([list(el.boundingRect().getRect()) for el in self.connected if type(el) is Bus])
         points = [rects[:,0].transpose(), rects[:,1].transpose(), rects[:,0]+rects[:,2], rects[:,1] + rects[:,3]]
         
         x0,y0,xn,yn = min(points[0]), min(points[1]), max(points[2]), max(points[3])
@@ -843,8 +846,20 @@ class Fault(object):
         return "<div class='info'><p>Elements:</p>{}</div>".format(elList)
     def html_reduction(self):
         return "<div class='info'><p>Reduction:</p>{:.3f}MW</div>".format(self.value)
+    
+    def html_affected(self):
+        affecting = [el for el in self.elements if (type(el) is Bus or type(el) is Transformer)]
+        if affecting:
+            from itertools import chain
+            affected = list(chain(*[el.html_connected_li() for el in affecting]))
+            
+            elList = "<ul>{}</ul>".format( "".join(affected))
+            return "<div class='info'><p>Affected Elements</b>{}</div>".format(elList)
+        else:
+            return ""
+            
     def html(self):
-        return "<div class='el'><h>Fault</h>{}{}</div>".format(self.html_elements(), self.html_reduction())
+        return "<div class='el'><h>Fault</h>{}{}{}</div>".format(self.html_elements(), self.html_reduction(), self.html_affected())
     
     
 

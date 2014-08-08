@@ -212,7 +212,7 @@ class ResultsFile(object):
         elements = self.getElements()
         
         elList = []
-        for elTypeList in elements.values():
+        for elTypeList in sorted(elements.values(), key= lambda x: x.__class__.__name__):
             elList += list(elTypeList.values())
         
         return elList
