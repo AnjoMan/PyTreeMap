@@ -35,8 +35,8 @@ import sys
 
 def main():
     
-    mCase =( 'case30_geometry.json','cpfResults_tree.json')
-    mCase =( os.path.join(pytreemap.system.__path__[0],mCase[0]), os.path.join(pytreemap.__path__[0], 'sample_results',mCase[1]))
+    mCase =('cpfResults_tree.json','case30_geometry.json')
+    mCase =(  os.path.join(pytreemap.__path__[0], 'sample_results',mCase[0]),os.path.join(pytreemap.system.__path__[0],mCase[1]))
     
     
     
@@ -87,11 +87,15 @@ class TreeVis(QWidget):
         self.resize(w,h)
         self.setWindowTitle('Tree Visualization')
         
+        
+        self.setMouseTracking(True)
         self.show()
+        
         self.rectangles, self.colors, self.outlines,self.lines, self.objs = [],[],[],[],[]
         self.colors = []
         self.levelLabels = []
         self.layoutMap()
+        
         
         
         self.draw(Legend( [ (mClass.__name__, mClass.color) for mClass in [Branch, Bus, Gen, Transformer]]))
@@ -296,6 +300,13 @@ class TreeFault(Fault):
     
     def setLevel(self, level):
         self.level = level
+    
+    def enterEvent(self):
+        print("Enter:", self)
+    
+    def leaveEvent(self):
+        print("Leave:", self)
+        
         
     def topConnectorPos(self):
         x,y = self.pos

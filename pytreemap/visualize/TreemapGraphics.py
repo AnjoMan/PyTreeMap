@@ -21,6 +21,7 @@ if __name__ == '__main__':
     
     
 
+
 from PySide.QtCore import *
 from PySide.QtGui import *
 import sys
@@ -129,8 +130,8 @@ class TreemapGraphicsVis(QGraphicsView):
         super().__init__()
         
 #         if not pos: pos = [50,50,900,900]
-        self.pos = pos
-        (x,y,w,h) = pos
+        (x,y,w,h) = self.pos = pos
+#         (x,y,w,h) = pos
         
         self.setMinimumSize(w,h)
         
