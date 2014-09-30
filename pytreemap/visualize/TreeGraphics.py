@@ -120,6 +120,10 @@ class TreeGraphicsVis(QGraphicsView):
 #         #build for equal spacing with radii scaled by levelContext 
         
         for levelNo, level in self.faultTree.items():
+            mLabel = QGraphicsTextItem("n-{}".format(levelNo))
+            mLabel.setFont(QFont("Helvetica", 25))
+            mLabel.setPos(150,y-20)
+            self.addWidget(mLabel)
 #             self.levelLabels.append( (levelNo, 80, y))
             if len(level) <2:  #case where only one fault is present
                 fault = level[0]
@@ -367,7 +371,7 @@ class TreeFault(Fault,QGraphicsItem):
         for other in self.connections:
             
 #             weight = 0.2 + 3*other.getLevelContext() + 2*self.getLevelContext()
-            weight=1
+            weight=2
             if self.highlight:
                 weight = weight+2
                 painter.setPen(QPen(Qt.black, weight))

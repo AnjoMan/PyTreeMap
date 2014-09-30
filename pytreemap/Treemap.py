@@ -182,13 +182,13 @@ def layColumn(values, pos, quantize=True, minBoxArea = 2):
         boxLengths = np.round(boxLengths) #round to integer value
         
         roundError = colLength - sum(boxLengths)
-        index = len(boxLengths)-1
+        index = len(boxLengths)-1 if roundError < 0 else 0; #start with biggest value if adding space, smallest if taking away space
         increment = -1 if roundError < 0 else 1;
         while roundError > 0:
             boxLengths[index] = boxLengths[index]+increment
             roundError = roundError - increment
-            index = index - 1
-            index = len(boxLengths)-1 if index < 0 else index
+            index = (index + increment )% len(boxLengths) #move up list if adding space (increment = 1) else move down
+#             index = len(boxLengths)-1 if index < 0 else index
             
 #         boxLengths[-1] = boxLengths[-1] + (colLength - sum(boxLengths)) #absorb rounding error into the smallest box in the row to preserve column length
     
